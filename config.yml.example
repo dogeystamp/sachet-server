@@ -1,0 +1,8 @@
+# vim: filetype=yaml
+
+secret_key: ""
+
+sqlalchemy_basedir: "sqlite:///"
+sqlalchemy_basename: "sachet"
+
+# bcrypt_log_rounds: 13
