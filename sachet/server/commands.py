@@ -35,14 +35,9 @@ def create_user(admin, username, password):
     manage.create_user(admin, username, password)
 
 @user_cli.command("delete")
-@click.option("--username", "selector_type", help="Delete by username.", flag_value="username", default=True)
-@click.option("--id", "selector_type", help="Delete by ID.", flag_value="ID", default=True)
-@click.argument("selector")
+@click.argument("username")
 @click.option('--yes', is_flag=True, expose_value=False, prompt=f"Are you sure you want to delete this user?")
-def delete_user(selector_type, selector):
-    if selector_type == "username":
-        manage.delete_user_by_username(selector)
-    elif selector_type == "ID":
-        manage.delete_user_by_id(selector)
+def delete_user(username):
+    manage.delete_user_by_username(username)
 
 app.cli.add_command(user_cli)
