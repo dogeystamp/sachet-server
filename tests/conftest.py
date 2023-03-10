@@ -1,10 +1,7 @@
 import pytest
+import yaml
 from sachet.server.users import manage
 from click.testing import CliRunner
-
-import os
-os.environ["APP_SETTINGS"] = "sachet.server.config.TestingConfig"
-
 from sachet.server import app, db
 
 @pytest.fixture
