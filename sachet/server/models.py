@@ -48,7 +48,7 @@ def _token_decorator(require_admin, f, *args, **kwargs):
                 "status": "fail",
                 "message": "Malformed Authorization header."
             }
-            return jsonify(resp)
+            return jsonify(resp), 401
 
     if not token:
         return jsonify({"status": "fail", "message": "Missing auth token"}), 401
