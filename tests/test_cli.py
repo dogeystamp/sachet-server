@@ -18,7 +18,7 @@ def test_db(flask_app_bare, cli):
     assert "users" not in inspect(db.engine).get_table_names()
 
 
-def test_user(flask_app, cli):
+def test_user(client, cli):
     """Test the CLI's ability to create then delete a user."""
     # create user
     result = cli.invoke(create_user, ["--username", "jeff", "--password", "1234"])
