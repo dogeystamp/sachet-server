@@ -2,6 +2,12 @@ from sachet.server import app, db
 from sachet.server.models import User
 
 def create_user(admin, username, password):
+    # to reduce confusion with API endpoints
+    forbidden = {"login", "logout", "extend"}
+
+    if username in forbidden:
+        raise KeyError(f"Username '{username}' is reserved and can not be used.")
+
     user = User.query.filter_by(username=username).first()
     if not user:
         user = User(

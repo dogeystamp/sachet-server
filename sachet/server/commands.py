@@ -1,7 +1,7 @@
 import click
 from sachet.server import app, db
 from sachet.server.models import User
-from sachet.server.auth import manage
+from sachet.server.users import manage
 from flask.cli import AppGroup
 
 

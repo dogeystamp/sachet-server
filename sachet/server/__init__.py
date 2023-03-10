@@ -18,5 +18,5 @@ db = SQLAlchemy(app)
 
 import sachet.server.commands
 
-from sachet.server.auth.views import auth_blueprint
-app.register_blueprint(auth_blueprint)
+from sachet.server.users.views import users_blueprint
+app.register_blueprint(users_blueprint)
