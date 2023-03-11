@@ -84,3 +84,104 @@ def test_login(client, users):
     assert resp_json.get("username") == "jeff"
     token = resp_json.get("auth_token")
     assert token is not None and token != ""
+
+
+def test_logout(client, tokens, validate_info):
+    """Test logging out."""
+
+    # unauthenticated
+    resp = client.post("/users/logout", json={
+            "token": tokens["jeff"]
+        },
+    )
+    assert resp.status_code == 401
+
+    # missing token
+    resp = client.post("/users/logout", json={
+
+        },
+        headers={
+            "Authorization": f"bearer {tokens['jeff']}"
+        }
+    )
+    assert resp.status_code == 400
+
+    # invalid token
+    resp = client.post("/users/logout", json={
+            "token": "not.real.jwt"
+        },
+        headers={
+            "Authorization": f"bearer {tokens['jeff']}"
+        }
+    )
+    assert resp.status_code == 400
+
+    # wrong user's token
+    resp = client.post("/users/logout", json={
+            "token": tokens["administrator"]
+        },
+        headers={
+            "Authorization": f"bearer {tokens['jeff']}"
+        }
+    )
+    assert resp.status_code == 403
+
+    # check that we can access this endpoint before logging out
+    resp = client.get("/users/jeff",
+        headers={
+            "Authorization": f"bearer {tokens['jeff']}"
+        }
+    )
+    assert resp.status_code == 200
+    validate_info("jeff", resp.get_json())
+
+    # valid logout
+    resp = client.post("/users/logout", json={
+            "token": tokens["jeff"]
+        },
+        headers={
+            "Authorization": f"bearer {tokens['jeff']}"
+        }
+    )
+    assert resp.status_code == 200
+
+    # check that the logout worked
+
+    resp = client.get("/users/jeff",
+        headers={
+            "Authorization": f"bearer {tokens['jeff']}"
+        }
+    )
+    assert resp.status_code == 401
+
+def test_admin_revoke(client, tokens, validate_info):
+    """Test that an admin can revoke any token from other users."""
+
+    resp = client.post("/users/logout", json={
+            "token": tokens["jeff"]
+        },
+        headers={
+            "Authorization": f"bearer {tokens['administrator']}"
+        }
+    )
+    assert resp.status_code == 200
+
+    # check that the logout worked
+
+    resp = client.get("/users/jeff",
+        headers={
+            "Authorization": f"bearer {tokens['jeff']}"
+        }
+    )
+    assert resp.status_code == 401
+
+    # try revoking twice
+
+    resp = client.post("/users/logout", json={
+            "token": tokens["jeff"]
+        },
+        headers={
+            "Authorization": f"bearer {tokens['administrator']}"
+        }
+    )
+    assert resp.status_code == 400

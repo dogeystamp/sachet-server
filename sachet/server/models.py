@@ -33,50 +33,97 @@ class User(db.Model):
             algorithm="HS256"
         )
 
-def _token_decorator(require_admin, f, *args, **kwargs):
-    """Generic function for checking tokens.
 
-    require_admin: require user to be administrator to authenticate
+class BlacklistToken(db.Model):
+    """Token that has been revoked (but has not expired yet.)
+
+    This is needed to perform functionality like logging out.
     """
-    token = None
-    auth_header = request.headers.get("Authorization")
-    if auth_header:
-        try:
-            token = auth_header.split(" ")[1]
-        except IndexError:
-            resp = {
-                "status": "fail",
-                "message": "Malformed Authorization header."
-            }
-            return jsonify(resp), 401
 
-    if not token:
-        return jsonify({"status": "fail", "message": "Missing auth token"}), 401
-    try:
-        data = jwt.decode(token, app.config["SECRET_KEY"], algorithms=["HS256"])
-        user = User.query.filter_by(username=data.get("sub")).first()
-    except:
-        return jsonify({"status": "fail", "message": "Invalid auth token."}), 401
+    __tablename__ = "blacklist_tokens"
+    
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    token = db.Column(db.String(500), unique=True,  nullable=False)
+    expires = db.Column(db.DateTime, nullable=False)
 
+    def __init__(self, token):
+        self.token = token
+
+        data = jwt.decode(
+            token,
+            app.config["SECRET_KEY"],
+            algorithms=["HS256"],
+        )
+        self.expires = datetime.datetime.fromtimestamp(data["exp"])
+
+    @staticmethod
+    def check_blacklist(token):
+        """Returns if a token is blacklisted."""
+        entry = BlacklistToken.query.filter_by(token=token).first()
+
+        if not entry:
+            return False
+        else:
+            if entry.expires < datetime.datetime.utcnow():
+                db.session.delete(entry)
+            return True
+
+
+def read_token(token):
+    """Read a JWT and validate it.
+
+    Returns a tuple: dictionary of the JWT's data, and the corresponding user
+    if available.
+    """
+
+    data = jwt.decode(
+        token,
+        app.config["SECRET_KEY"],
+        algorithms=["HS256"],
+    )
+
+    if BlacklistToken.check_blacklist(token):
+        raise jwt.ExpiredSignatureError("Token revoked.")
+
+    user = User.query.filter_by(username=data.get("sub")).first()
     if not user:
-        return jsonify({"status": "fail", "message": "Invalid auth token."}), 401
+        raise jwt.InvalidTokenError("No user corresponds to this token.")
 
-    if require_admin and not user.admin:
-        return jsonify({"status": "fail", "message": "You are not authorized to view this page."}), 403
+    return data, user
 
-    return f(user, *args, **kwargs)
 
-def token_required(f):
-    """Decorator to require authentication."""
+def auth_required(f):
+    """Decorator to require authentication.
+
+    Passes an argument 'user' to the function, with a User object corresponding
+    to the authenticated session.
+    """
     @wraps(f)
     def decorator(*args, **kwargs):
-        return _token_decorator(False, f, *args, **kwargs)
-    return decorator
+        token = None
+        auth_header = request.headers.get("Authorization")
+        if auth_header:
+            try:
+                token = auth_header.split(" ")[1]
+            except IndexError:
+                resp = {
+                    "status": "fail",
+                    "message": "Malformed Authorization header."
+                }
+                return jsonify(resp), 401
 
-def admin_required(f):
-    """Decorator to require authentication and admin privileges."""
+        if not token:
+            return jsonify({"status": "fail", "message": "Missing auth token"}), 401
 
-    @wraps(f)
-    def decorator(*args, **kwargs):
-        return _token_decorator(True, f, *args, **kwargs)
+        try:
+            data, user = read_token(token)
+        except jwt.ExpiredSignatureError:
+            # if it's expired we don't want it lingering in the db
+            BlacklistToken.check_blacklist(token)
+            return jsonify({"status": "fail", "message": "Token has expired."}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({"status": "fail", "message": "Invalid auth token."}), 401
+
+        return f(user, *args, **kwargs)
+
     return decorator
