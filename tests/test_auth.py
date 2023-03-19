@@ -86,6 +86,42 @@ def test_login(client, users):
     assert token is not None and token != ""
 
 
+def test_extend(client, tokens, validate_info):
+    """Test extending the token lifespan (get a new one with later expiry)."""
+
+    # obtain new token
+    resp = client.post("/users/extend",
+        headers={
+            "Authorization": f"Bearer {tokens['jeff']}"
+        }
+    )
+    assert resp.status_code == 200
+    resp_json = resp.get_json()
+    new_token = resp_json.get("auth_token")
+    assert new_token is not None
+    assert new_token is not tokens["jeff"]
+
+    # revoke old token
+
+    resp = client.post("/users/logout", json={
+            "token": tokens["jeff"]
+        },
+        headers={
+            "Authorization": f"bearer {tokens['jeff']}"
+        }
+    )
+
+    # log in with the new token
+    resp = client.get("/users/jeff",
+        headers={
+            "Authorization": f"Bearer {new_token}"
+        }
+    )
+    assert resp.status_code == 200
+    resp_json = resp.get_json()
+    validate_info("jeff", resp_json)
+
+
 def test_logout(client, tokens, validate_info):
     """Test logging out."""
 

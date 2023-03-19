@@ -80,6 +80,28 @@ users_blueprint.add_url_rule(
 )
 
 
+class ExtendAPI(MethodView):
+    """Endpoint to take a token and get a new one with a later expiry date."""
+
+    @auth_required
+    def post(user, self):
+        token = user.encode_token(jti="renew")
+        resp = {
+            "status": "success",
+            "message": "Renewed token.",
+            "username": user.username,
+            "auth_token": token
+        }
+        return jsonify(resp), 200
+
+
+users_blueprint.add_url_rule(
+    "/users/extend",
+    view_func=ExtendAPI.as_view("extend_api"),
+    methods=['POST']
+)
+
+
 class UserAPI(MethodView):
     """User information API"""
     @auth_required

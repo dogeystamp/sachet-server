@@ -20,12 +20,13 @@ class User(db.Model):
         self.register_date = datetime.datetime.now()
         self.admin = admin
 
-    def encode_token(self):
+    def encode_token(self, jti=None):
         """Generates an authentication token"""
         payload = {
             "exp": datetime.datetime.utcnow() + datetime.timedelta(days=7),
             "iat": datetime.datetime.utcnow(),
-            "sub": self.username
+            "sub": self.username,
+            "jti": jti
         }
         return jwt.encode(
             payload,
