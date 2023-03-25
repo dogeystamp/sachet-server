@@ -1,4 +1,4 @@
-from sachet.server import app, db, bcrypt
+from sachet.server import app, db, ma, bcrypt
 from flask import request, jsonify
 from functools import wraps
 import datetime
@@ -33,6 +33,15 @@ class User(db.Model):
             app.config.get("SECRET_KEY"),
             algorithm="HS256"
         )
+
+
+class UserSchema(ma.SQLAlchemySchema):
+    class Meta:
+        model = User
+
+    username = ma.auto_field()
+    register_date = ma.auto_field()
+    admin = ma.auto_field()
 
 
 class BlacklistToken(db.Model):

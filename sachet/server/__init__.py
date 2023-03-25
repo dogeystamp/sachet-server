@@ -2,6 +2,7 @@ import os
 from flask import Flask
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
+from flask_marshmallow import Marshmallow
 from flask_bcrypt import Bcrypt
 from .config import DevelopmentConfig, ProductionConfig, TestingConfig, overlay_config
 
@@ -18,6 +19,7 @@ else:
 
 bcrypt = Bcrypt(app)
 db = SQLAlchemy(app)
+ma = Marshmallow()
 
 import sachet.server.commands
 

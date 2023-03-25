@@ -1,8 +1,10 @@
 import jwt
 from flask import Blueprint, request, jsonify
 from flask.views import MethodView
-from sachet.server.models import auth_required, read_token, User, BlacklistToken
+from sachet.server.models import auth_required, read_token, User, UserSchema, BlacklistToken
 from sachet.server import bcrypt, db
+
+user_schema = UserSchema()
 
 users_blueprint = Blueprint("users_blueprint", __name__)
 
@@ -114,10 +116,7 @@ class UserAPI(MethodView):
             }
             return jsonify(resp), 403
 
-        return jsonify({
-            "username": info_user.username,
-            "admin": info_user.admin,
-        })
+        return jsonify(user_schema.dump(info_user))
 
 users_blueprint.add_url_rule(
     "/users/<username>",

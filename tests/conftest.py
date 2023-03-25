@@ -57,9 +57,15 @@ def users(client):
 @pytest.fixture
 def validate_info(users):
     """Given a dictionary, validate the information against a given user's info."""
+
+    verify_fields = [
+        "username",
+        "admin",
+    ]
+
     def _validate(user, info):
-        for k, v in info.items():
-            assert users[user][k] == v
+        for k in verify_fields:
+            assert users[user][k] == info[k]
 
     return _validate
 
