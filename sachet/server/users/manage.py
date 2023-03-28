@@ -1,7 +1,7 @@
 from sachet.server import app, db
 from sachet.server.models import User
 
-def create_user(admin, username, password):
+def create_user(permissions, username, password):
     # to reduce confusion with API endpoints
     forbidden = {"login", "logout", "extend"}
 
@@ -13,7 +13,7 @@ def create_user(admin, username, password):
         user = User(
             username=username,
             password=password,
-            admin=admin
+            permissions=permissions
         )
         db.session.add(user)
         db.session.commit()

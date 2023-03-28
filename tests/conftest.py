@@ -3,6 +3,10 @@ import yaml
 from sachet.server.users import manage
 from click.testing import CliRunner
 from sachet.server import app, db
+from sachet.server.models import Permissions, UserSchema
+from bitmask import Bitmask
+
+user_schema = UserSchema()
 
 @pytest.fixture
 def client():
@@ -32,21 +36,21 @@ def users(client):
 
     Returns a dictionary with all the info for each user.
     """
-    userinfo = {
-        "jeff": {
-            "password": "1234",
-            "admin": False
-        },
-        "administrator": {
-            "password": "4321",
-            "admin": True
-        }
-    }
+    userinfo = dict(
+        jeff = dict(
+            password = "1234",
+            permissions = Bitmask()
+            ),
+        administrator = dict(
+            password = "4321",
+            permissions = Bitmask(Permissions.ADMIN)
+            ),
+        )
 
     for user, info in userinfo.items():
         info["username"] = user
         manage.create_user(
-            info["admin"],
+            info["permissions"],
             info["username"],
             info["password"]
         )
@@ -56,14 +60,16 @@ def users(client):
 
 @pytest.fixture
 def validate_info(users):
-    """Given a dictionary, validate the information against a given user's info."""
+    """Given a response, deserialize and validate the information against a given user's info."""
 
     verify_fields = [
         "username",
-        "admin",
+        "permissions",
     ]
 
     def _validate(user, info):
+        info = user_schema.load(info)
+
         for k in verify_fields:
             assert users[user][k] == info[k]
 

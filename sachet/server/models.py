@@ -1,8 +1,21 @@
 from sachet.server import app, db, ma, bcrypt
+from marshmallow import fields, ValidationError
 from flask import request, jsonify
 from functools import wraps
 import datetime
 import jwt
+from bitmask import Bitmask
+from enum import IntFlag
+
+
+class Permissions(IntFlag):
+    CREATE = 1
+    MODIFY = 1<<1
+    DELETE = 1<<2
+    LOCK = 1<<3
+    LIST = 1<<4
+    ADMIN = 1<<5
+
 
 class User(db.Model):
     __tablename__ = "users"
@@ -10,15 +23,44 @@ class User(db.Model):
     username = db.Column(db.String(255), unique=True, nullable=False, primary_key=True)
     password = db.Column(db.String(255), nullable=False)
     register_date = db.Column(db.DateTime, nullable=False)
-    admin = db.Column(db.Boolean, nullable=False, default=False)
 
-    def __init__(self, username, password, admin=False):
+    permissions_number = db.Column(db.BigInteger, nullable=False, default=0)
+
+    @property
+    def permissions(self):
+        """
+        Bitmask listing all permissions.
+
+        See the Permissions class for all possible permissions.
+        
+        Also, see https://github.com/dogeystamp/bitmask for information on how
+        to use this field.
+        """
+
+        mask = Bitmask()
+        mask.AllFlags = Permissions
+        mask.value = self.permissions_number
+        return mask
+
+    @permissions.setter
+    def permissions(self, value):
+        mask = Bitmask()
+        mask.AllFlags = Permissions
+        mask += value
+        self.permissions_number = mask.value
+        db.session.commit()
+
+
+    def __init__(self, username, password, permissions):
+        permissions.AllFlags = Permissions
+        self.permissions = permissions
+
         self.password = bcrypt.generate_password_hash(
                 password, app.config.get("BCRYPT_LOG_ROUNDS")
         ).decode()
         self.username = username
         self.register_date = datetime.datetime.now()
-        self.admin = admin
+
 
     def encode_token(self, jti=None):
         """Generates an authentication token"""
@@ -35,13 +77,37 @@ class User(db.Model):
         )
 
 
+class PermissionField(fields.Field):
+    """Field that serializes a Permissions bitmask to an array of strings."""
+
+    def _serialize(self, value, attr, obj, **kwargs):
+        mask = Bitmask()
+        mask.AllFlags = Permissions
+        mask += value
+        return [flag.name for flag in mask]
+
+    def _deserialize(self, value, attr, data, **kwargs):
+        mask = Bitmask()
+        mask.AllFlags = Permissions
+
+        flags = value
+
+        try:
+            for flag in flags:
+                mask.add(Permissions[flag])
+        except KeyError as e:
+            raise ValidationError("Invalid permission.") from e
+
+        return mask
+
+
 class UserSchema(ma.SQLAlchemySchema):
     class Meta:
         model = User
 
     username = ma.auto_field()
     register_date = ma.auto_field()
-    admin = ma.auto_field()
+    permissions = PermissionField(data_key="permissions")
 
 
 class BlacklistToken(db.Model):

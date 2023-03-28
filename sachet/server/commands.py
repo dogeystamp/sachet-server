@@ -1,8 +1,9 @@
 import click
 from sachet.server import app, db
-from sachet.server.models import User
+from sachet.server.models import User, Permissions
 from sachet.server.users import manage
 from flask.cli import AppGroup
+from bitmask import Bitmask
 
 
 db_cli = AppGroup("db")
@@ -32,7 +33,10 @@ user_cli = AppGroup("user")
               help="Sets the user's password (for security, avoid setting this from the command line).")
 def create_user(admin, username, password):
     """Create a user directly in the database."""
-    manage.create_user(admin, username, password)
+    perms = Bitmask()
+    if admin:
+        perms.add(Permissions.ADMIN)
+    manage.create_user(perms, username, password)
 
 @user_cli.command("delete")
 @click.argument("username")

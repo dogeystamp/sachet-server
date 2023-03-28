@@ -1,7 +1,7 @@
 import jwt
 from flask import Blueprint, request, jsonify
 from flask.views import MethodView
-from sachet.server.models import auth_required, read_token, User, UserSchema, BlacklistToken
+from sachet.server.models import auth_required, read_token, Permissions, User, UserSchema, BlacklistToken
 from sachet.server import bcrypt, db
 
 user_schema = UserSchema()
@@ -66,7 +66,7 @@ class LogoutAPI(MethodView):
         except jwt.InvalidTokenError:
             return jsonify({"status": "fail", "message": "Invalid auth token."}), 400
 
-        if user == token_user or user.admin == True:
+        if user == token_user or Permissions.ADMIN in user.permissions:
             entry = BlacklistToken(token=token)
             db.session.add(entry)
             db.session.commit()
@@ -109,7 +109,7 @@ class UserAPI(MethodView):
     @auth_required
     def get(user, self, username):
         info_user = User.query.filter_by(username=username).first()
-        if (not info_user) or (info_user != user and not user.admin):
+        if (not info_user) or (info_user != user and Permissions.ADMIN not in user.permissions):
             resp = {
                 "status": "fail",
                 "message": "You are not authorized to view this page."
