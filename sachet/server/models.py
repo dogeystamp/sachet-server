@@ -17,6 +17,22 @@ class Permissions(IntFlag):
     ADMIN = 1<<5
 
 
+def patch(orig, diff):
+    """Patch the dictionary orig recursively with the dictionary diff."""
+
+    # if we get to a leaf node, just replace it
+    if not isinstance(orig, dict) or not isinstance(diff, dict):
+        return diff
+
+    # deep copy
+    new = {k:v for k, v in orig.items()}
+
+    for key, value in diff.items():
+        new[key] = patch(orig.get(key, {}), diff[key])
+
+    return new
+        
+
 class User(db.Model):
     __tablename__ = "users"
 

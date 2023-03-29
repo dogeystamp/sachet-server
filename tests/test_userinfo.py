@@ -1,6 +1,8 @@
 import pytest
+from bitmask import Bitmask
+from sachet.server.models import Permissions
 
-def test_userinfo(client, tokens, validate_info):
+def test_get(client, tokens, validate_info):
     """Test accessing the user information endpoint as a normal user."""
 
     # access user info endpoint
@@ -41,6 +43,51 @@ def test_userinfo_admin(client, tokens, validate_info):
         "/users/jeff",
         headers={
             "Authorization": f"bearer {tokens['administrator']}"
+        }
+    )
+    assert resp.status_code == 200
+    validate_info("jeff", resp.get_json())
+
+def test_patch(client, users, tokens, validate_info):
+    """Test modifying user information as an administrator."""
+
+    # try with regular user to make sure it doesn't work
+    resp = client.patch(
+        "/users/jeff",
+        json = { "permissions": ["ADMIN"] },
+        headers={
+            "Authorization": f"bearer {tokens['jeff']}"
+        }
+    )
+    assert resp.status_code == 403
+
+    # test malformed patch
+    resp = client.patch(
+        "/users/jeff",
+        json = "hurr durr",
+        headers={
+            "Authorization": f"bearer {tokens['administrator']}"
+        }
+    )
+    assert resp.status_code == 400
+
+    resp = client.patch(
+        "/users/jeff",
+        json = { "permissions": ["ADMIN"] },
+        headers={
+            "Authorization": f"bearer {tokens['administrator']}"
+        }
+    )
+    assert resp.status_code == 200
+
+    # modify the expected values
+    users["jeff"]["permissions"] = Bitmask(Permissions.ADMIN)
+
+    # request new info
+    resp = client.get(
+        "/users/jeff",
+        headers={
+            "Authorization": f"bearer {tokens['jeff']}"
         }
     )
     assert resp.status_code == 200

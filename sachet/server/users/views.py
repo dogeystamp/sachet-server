@@ -1,8 +1,9 @@
 import jwt
 from flask import Blueprint, request, jsonify
 from flask.views import MethodView
-from sachet.server.models import auth_required, read_token, Permissions, User, UserSchema, BlacklistToken
+from sachet.server.models import auth_required, read_token, patch, Permissions, User, UserSchema, BlacklistToken
 from sachet.server import bcrypt, db
+from marshmallow import ValidationError
 
 user_schema = UserSchema()
 
@@ -118,8 +119,41 @@ class UserAPI(MethodView):
 
         return jsonify(user_schema.dump(info_user))
 
+    @auth_required
+    def patch(user, self, username):
+        patch_user = User.query.filter_by(username=username).first()
+
+        if Permissions.ADMIN not in user.permissions:
+            resp = {
+                "status": "fail",
+                "message": "You are not authorized to access this page."
+            }
+            return jsonify(resp), 403
+
+        patch_json = request.get_json()
+        orig_json = user_schema.dump(patch_user)
+        
+        new_json = patch(orig_json, patch_json)
+
+        try:
+            deserialized = user_schema.load(new_json)
+        except ValidationError as e:
+            resp = {
+                "status": "fail",
+                "message": f"Invalid patch: {str(e)}"
+            }
+            return jsonify(resp), 400
+
+        for k, v in deserialized.items():
+            setattr(patch_user, k, v)
+
+        resp = {
+            "status": "success",
+        }
+        return jsonify(resp), 200
+
 users_blueprint.add_url_rule(
     "/users/<username>",
     view_func=UserAPI.as_view("user_api"),
-    methods=['GET']
+    methods=['GET', 'PATCH']
 )
