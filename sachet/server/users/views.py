@@ -123,7 +123,7 @@ class UserAPI(MethodView):
     def patch(user, self, username):
         patch_user = User.query.filter_by(username=username).first()
 
-        if Permissions.ADMIN not in user.permissions:
+        if not patch_user or Permissions.ADMIN not in user.permissions:
             resp = {
                 "status": "fail",
                 "message": "You are not authorized to access this page."
@@ -152,8 +152,38 @@ class UserAPI(MethodView):
         }
         return jsonify(resp), 200
 
+    @auth_required
+    def put(user, self, username):
+        put_user = User.query.filter_by(username=username).first()
+
+        if not put_user or Permissions.ADMIN not in user.permissions:
+            resp = {
+                "status": "fail",
+                "message": "You are not authorized to access this page."
+            }
+            return jsonify(resp), 403
+
+        new_json = request.get_json()
+
+        try:
+            deserialized = user_schema.load(new_json)
+        except ValidationError as e:
+            resp = {
+                "status": "fail",
+                "message": f"Invalid data: {str(e)}"
+            }
+            return jsonify(resp), 400
+
+        for k, v in deserialized.items():
+            setattr(put_user, k, v)
+
+        resp = {
+            "status": "success",
+        }
+        return jsonify(resp), 200
+
 users_blueprint.add_url_rule(
     "/users/<username>",
     view_func=UserAPI.as_view("user_api"),
-    methods=['GET', 'PATCH']
+    methods=['GET', 'PATCH', 'PUT']
 )
