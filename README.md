@@ -34,3 +34,11 @@ Tests are available with the following command:
 ```
 pytest --cov --cov-report term-missing
 ```
+
+### linting
+
+Please use the linter before submitting code.
+
+```
+black .
+```

@@ -5,6 +5,7 @@ from sqlalchemy import inspect
 
 from sachet.server.models import User
 
+
 def test_db(flask_app_bare, cli):
     """Test the CLI's ability to create and drop the DB."""
     # make tables

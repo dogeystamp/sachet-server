@@ -24,6 +24,7 @@ ma = Marshmallow()
 import sachet.server.commands
 
 from sachet.server.users.views import users_blueprint
+
 app.register_blueprint(users_blueprint)
 
 with app.app_context():

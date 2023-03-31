@@ -10,11 +10,11 @@ from enum import IntFlag
 
 class Permissions(IntFlag):
     CREATE = 1
-    MODIFY = 1<<1
-    DELETE = 1<<2
-    LOCK = 1<<3
-    LIST = 1<<4
-    ADMIN = 1<<5
+    MODIFY = 1 << 1
+    DELETE = 1 << 2
+    LOCK = 1 << 3
+    LIST = 1 << 4
+    ADMIN = 1 << 5
 
 
 def patch(orig, diff):
@@ -25,13 +25,13 @@ def patch(orig, diff):
         return diff
 
     # deep copy
-    new = {k:v for k, v in orig.items()}
+    new = {k: v for k, v in orig.items()}
 
     for key, value in diff.items():
         new[key] = patch(orig.get(key, {}), diff[key])
 
     return new
-        
+
 
 class User(db.Model):
     __tablename__ = "users"
@@ -48,7 +48,7 @@ class User(db.Model):
         Bitmask listing all permissions.
 
         See the Permissions class for all possible permissions.
-        
+
         Also, see https://github.com/dogeystamp/bitmask for information on how
         to use this field.
         """
@@ -66,17 +66,15 @@ class User(db.Model):
         self.permissions_number = mask.value
         db.session.commit()
 
-
     def __init__(self, username, password, permissions):
         permissions.AllFlags = Permissions
         self.permissions = permissions
 
         self.password = bcrypt.generate_password_hash(
-                password, app.config.get("BCRYPT_LOG_ROUNDS")
+            password, app.config.get("BCRYPT_LOG_ROUNDS")
         ).decode()
         self.username = username
         self.register_date = datetime.datetime.now()
-
 
     def encode_token(self, jti=None):
         """Generates an authentication token"""
@@ -84,13 +82,9 @@ class User(db.Model):
             "exp": datetime.datetime.utcnow() + datetime.timedelta(days=7),
             "iat": datetime.datetime.utcnow(),
             "sub": self.username,
-            "jti": jti
+            "jti": jti,
         }
-        return jwt.encode(
-            payload,
-            app.config.get("SECRET_KEY"),
-            algorithm="HS256"
-        )
+        return jwt.encode(payload, app.config.get("SECRET_KEY"), algorithm="HS256")
 
 
 class PermissionField(fields.Field):
@@ -133,9 +127,9 @@ class BlacklistToken(db.Model):
     """
 
     __tablename__ = "blacklist_tokens"
-    
+
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    token = db.Column(db.String(500), unique=True,  nullable=False)
+    token = db.Column(db.String(500), unique=True, nullable=False)
     expires = db.Column(db.DateTime, nullable=False)
 
     def __init__(self, token):
@@ -190,6 +184,7 @@ def auth_required(f):
     Passes an argument 'user' to the function, with a User object corresponding
     to the authenticated session.
     """
+
     @wraps(f)
     def decorator(*args, **kwargs):
         token = None
@@ -198,10 +193,7 @@ def auth_required(f):
             try:
                 token = auth_header.split(" ")[1]
             except IndexError:
-                resp = {
-                    "status": "fail",
-                    "message": "Malformed Authorization header."
-                }
+                resp = {"status": "fail", "message": "Malformed Authorization header."}
                 return jsonify(resp), 401
 
         if not token:

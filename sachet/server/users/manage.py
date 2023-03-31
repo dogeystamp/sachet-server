@@ -1,6 +1,7 @@
 from sachet.server import app, db
 from sachet.server.models import User
 
+
 def create_user(permissions, username, password):
     # to reduce confusion with API endpoints
     forbidden = {"login", "logout", "extend"}
@@ -10,15 +11,12 @@ def create_user(permissions, username, password):
 
     user = User.query.filter_by(username=username).first()
     if not user:
-        user = User(
-            username=username,
-            password=password,
-            permissions=permissions
-        )
+        user = User(username=username, password=password, permissions=permissions)
         db.session.add(user)
         db.session.commit()
     else:
         raise KeyError(f"User '{username}' already exists.")
+
 
 def delete_user_by_username(username):
     user = User.query.filter_by(username=username).first()

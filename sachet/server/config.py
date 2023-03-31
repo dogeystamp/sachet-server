@@ -3,21 +3,26 @@ import yaml
 
 sqlalchemy_base = "sqlite:///sachet"
 
+
 class BaseConfig:
     SQLALCHEMY_DATABASE_URI = sqlalchemy_base + ".db"
     BCRYPT_LOG_ROUNDS = 13
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+
 class TestingConfig(BaseConfig):
     SQLALCHEMY_DATABASE_URI = sqlalchemy_base + "_test" + ".db"
     BCRYPT_LOG_ROUNDS = 4
+
 
 class DevelopmentConfig(BaseConfig):
     SQLALCHEMY_DATABASE_URI = sqlalchemy_base + "_dev" + ".db"
     BCRYPT_LOG_ROUNDS = 4
 
+
 class ProductionConfig(BaseConfig):
     pass
+
 
 def overlay_config(base, config_file=None):
     """Reading from a YAML file, this overrides configuration options from the bases above."""
@@ -33,7 +38,9 @@ def overlay_config(base, config_file=None):
             break
 
     if config_path == "":
-        raise FileNotFoundError("Please create a configuration: copy config.yml.example to config.yml.")
+        raise FileNotFoundError(
+            "Please create a configuration: copy config.yml.example to config.yml."
+        )
 
     config = yaml.safe_load(open(config_path))
 
@@ -41,6 +48,7 @@ def overlay_config(base, config_file=None):
         raise ValueError("Please set secret_key within the configuration.")
 
     from sachet.server import app
+
     app.config.from_object(base)
 
     for k, v in config.items():

@@ -8,6 +8,7 @@ from bitmask import Bitmask
 
 user_schema = UserSchema()
 
+
 @pytest.fixture
 def client():
     """Flask application with DB already set up and ready."""
@@ -19,7 +20,7 @@ def client():
             yield client
             db.session.remove()
             db.drop_all()
-        
+
 
 @pytest.fixture
 def flask_app_bare():
@@ -37,23 +38,13 @@ def users(client):
     Returns a dictionary with all the info for each user.
     """
     userinfo = dict(
-        jeff = dict(
-            password = "1234",
-            permissions = Bitmask()
-            ),
-        administrator = dict(
-            password = "4321",
-            permissions = Bitmask(Permissions.ADMIN)
-            ),
-        )
+        jeff=dict(password="1234", permissions=Bitmask()),
+        administrator=dict(password="4321", permissions=Bitmask(Permissions.ADMIN)),
+    )
 
     for user, info in userinfo.items():
         info["username"] = user
-        manage.create_user(
-            info["permissions"],
-            info["username"],
-            info["password"]
-        )
+        manage.create_user(info["permissions"], info["username"], info["password"])
 
     return userinfo
 
@@ -86,10 +77,10 @@ def tokens(client, users):
     toks = {}
 
     for user, creds in users.items():
-        resp = client.post("/users/login", json={
-            "username": creds["username"],
-            "password": creds["password"]
-        })
+        resp = client.post(
+            "/users/login",
+            json={"username": creds["username"], "password": creds["password"]},
+        )
         resp_json = resp.get_json()
         token = resp_json.get("auth_token")
         assert token is not None and token != ""
