@@ -2,17 +2,12 @@ import jwt
 from flask import Blueprint, request, jsonify
 from flask.views import MethodView
 from sachet.server.models import (
-    auth_required,
-    patch,
     Permissions,
     User,
-    UserSchema,
     BlacklistToken,
 )
+from sachet.server.views_common import ModelAPI, auth_required
 from sachet.server import bcrypt, db
-from marshmallow import ValidationError
-
-user_schema = UserSchema()
 
 users_blueprint = Blueprint("users_blueprint", __name__)
 
@@ -51,7 +46,7 @@ class LogoutAPI(MethodView):
     """Endpoint to revoke a user's token."""
 
     @auth_required
-    def post(user, self):
+    def post(self, auth_user=None):
         post_data = request.get_json()
         token = post_data.get("token")
         if not token:
@@ -71,7 +66,7 @@ class LogoutAPI(MethodView):
         except jwt.InvalidTokenError:
             return jsonify({"status": "fail", "message": "Invalid auth token."}), 400
 
-        if user == token_user or Permissions.ADMIN in user.permissions:
+        if auth_user == token_user or Permissions.ADMIN in auth_user.permissions:
             entry = BlacklistToken(token=token)
             db.session.add(entry)
             db.session.commit()
@@ -97,12 +92,12 @@ class ExtendAPI(MethodView):
     """Endpoint to take a token and get a new one with a later expiry date."""
 
     @auth_required
-    def post(user, self):
-        token = user.encode_token(jti="renew")
+    def post(self, auth_user=None):
+        token = auth_user.encode_token(jti="renew")
         resp = {
             "status": "success",
             "message": "Renewed token.",
-            "username": user.username,
+            "username": auth_user.username,
             "auth_token": token,
         }
         return jsonify(resp), 200
@@ -113,14 +108,15 @@ users_blueprint.add_url_rule(
 )
 
 
-class UserAPI(MethodView):
+class UserAPI(ModelAPI):
     """User information API"""
 
     @auth_required
-    def get(user, self, username):
+    def get(self, username, auth_user=None):
         info_user = User.query.filter_by(username=username).first()
+        # only allow user to query themselves, but admin can query anyone
         if (not info_user) or (
-            info_user != user and Permissions.ADMIN not in user.permissions
+            info_user != auth_user and Permissions.ADMIN not in auth_user.permissions
         ):
             resp = {
                 "status": "fail",
@@ -128,64 +124,17 @@ class UserAPI(MethodView):
             }
             return jsonify(resp), 403
 
-        return jsonify(user_schema.dump(info_user))
+        return super().get(info_user)
 
-    @auth_required
-    def patch(user, self, username):
+    @auth_required(require_admin=True)
+    def patch(self, username, auth_user=None):
         patch_user = User.query.filter_by(username=username).first()
+        return super().patch(patch_user)
 
-        if not patch_user or Permissions.ADMIN not in user.permissions:
-            resp = {
-                "status": "fail",
-                "message": "You are not authorized to access this page.",
-            }
-            return jsonify(resp), 403
-
-        patch_json = request.get_json()
-        orig_json = user_schema.dump(patch_user)
-
-        new_json = patch(orig_json, patch_json)
-
-        try:
-            deserialized = user_schema.load(new_json)
-        except ValidationError as e:
-            resp = {"status": "fail", "message": f"Invalid patch: {str(e)}"}
-            return jsonify(resp), 400
-
-        for k, v in deserialized.items():
-            setattr(patch_user, k, v)
-
-        resp = {
-            "status": "success",
-        }
-        return jsonify(resp), 200
-
-    @auth_required
-    def put(user, self, username):
+    @auth_required(require_admin=True)
+    def put(self, username, auth_user=None):
         put_user = User.query.filter_by(username=username).first()
-
-        if not put_user or Permissions.ADMIN not in user.permissions:
-            resp = {
-                "status": "fail",
-                "message": "You are not authorized to access this page.",
-            }
-            return jsonify(resp), 403
-
-        new_json = request.get_json()
-
-        try:
-            deserialized = user_schema.load(new_json)
-        except ValidationError as e:
-            resp = {"status": "fail", "message": f"Invalid data: {str(e)}"}
-            return jsonify(resp), 400
-
-        for k, v in deserialized.items():
-            setattr(put_user, k, v)
-
-        resp = {
-            "status": "success",
-        }
-        return jsonify(resp), 200
+        return super().put(put_user)
 
 
 users_blueprint.add_url_rule(

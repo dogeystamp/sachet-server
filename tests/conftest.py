@@ -3,10 +3,8 @@ import yaml
 from sachet.server.users import manage
 from click.testing import CliRunner
 from sachet.server import app, db
-from sachet.server.models import Permissions, UserSchema
+from sachet.server.models import Permissions, User
 from bitmask import Bitmask
-
-user_schema = UserSchema()
 
 
 @pytest.fixture
@@ -59,7 +57,7 @@ def validate_info(users):
     ]
 
     def _validate(user, info):
-        info = user_schema.load(info)
+        info = User.get_schema(User).load(info)
 
         for k in verify_fields:
             assert users[user][k] == info[k]

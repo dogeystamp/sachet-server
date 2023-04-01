@@ -17,20 +17,28 @@ class Permissions(IntFlag):
     ADMIN = 1 << 5
 
 
-def patch(orig, diff):
-    """Patch the dictionary orig recursively with the dictionary diff."""
+class PermissionField(fields.Field):
+    """Field that serializes a Permissions bitmask to an array of strings."""
 
-    # if we get to a leaf node, just replace it
-    if not isinstance(orig, dict) or not isinstance(diff, dict):
-        return diff
+    def _serialize(self, value, attr, obj, **kwargs):
+        mask = Bitmask()
+        mask.AllFlags = Permissions
+        mask += value
+        return [flag.name for flag in mask]
 
-    # deep copy
-    new = {k: v for k, v in orig.items()}
+    def _deserialize(self, value, attr, data, **kwargs):
+        mask = Bitmask()
+        mask.AllFlags = Permissions
 
-    for key, value in diff.items():
-        new[key] = patch(orig.get(key, {}), diff[key])
+        flags = value
 
-    return new
+        try:
+            for flag in flags:
+                mask.add(Permissions[flag])
+        except KeyError as e:
+            raise ValidationError("Invalid permission.") from e
+
+        return mask
 
 
 class User(db.Model):
@@ -86,7 +94,6 @@ class User(db.Model):
         }
         return jwt.encode(payload, app.config.get("SECRET_KEY"), algorithm="HS256")
 
-
     def read_token(token):
         """Read a JWT and validate it.
 
@@ -109,38 +116,16 @@ class User(db.Model):
 
         return data, user
 
+    def get_schema(self):
+        class Schema(ma.SQLAlchemySchema):
+            class Meta:
+                model = self
 
-class PermissionField(fields.Field):
-    """Field that serializes a Permissions bitmask to an array of strings."""
+            username = ma.auto_field()
+            register_date = ma.auto_field()
+            permissions = PermissionField(data_key="permissions")
 
-    def _serialize(self, value, attr, obj, **kwargs):
-        mask = Bitmask()
-        mask.AllFlags = Permissions
-        mask += value
-        return [flag.name for flag in mask]
-
-    def _deserialize(self, value, attr, data, **kwargs):
-        mask = Bitmask()
-        mask.AllFlags = Permissions
-
-        flags = value
-
-        try:
-            for flag in flags:
-                mask.add(Permissions[flag])
-        except KeyError as e:
-            raise ValidationError("Invalid permission.") from e
-
-        return mask
-
-
-class UserSchema(ma.SQLAlchemySchema):
-    class Meta:
-        model = User
-
-    username = ma.auto_field()
-    register_date = ma.auto_field()
-    permissions = PermissionField(data_key="permissions")
+        return Schema()
 
 
 class BlacklistToken(db.Model):
@@ -176,38 +161,3 @@ class BlacklistToken(db.Model):
             if entry.expires < datetime.datetime.utcnow():
                 db.session.delete(entry)
             return True
-
-
-def auth_required(f):
-    """Decorator to require authentication.
-
-    Passes an argument 'user' to the function, with a User object corresponding
-    to the authenticated session.
-    """
-
-    @wraps(f)
-    def decorator(*args, **kwargs):
-        token = None
-        auth_header = request.headers.get("Authorization")
-        if auth_header:
-            try:
-                token = auth_header.split(" ")[1]
-            except IndexError:
-                resp = {"status": "fail", "message": "Malformed Authorization header."}
-                return jsonify(resp), 401
-
-        if not token:
-            return jsonify({"status": "fail", "message": "Missing auth token"}), 401
-
-        try:
-            data, user = User.read_token(token)
-        except jwt.ExpiredSignatureError:
-            # if it's expired we don't want it lingering in the db
-            BlacklistToken.check_blacklist(token)
-            return jsonify({"status": "fail", "message": "Token has expired."}), 401
-        except jwt.InvalidTokenError:
-            return jsonify({"status": "fail", "message": "Invalid auth token."}), 401
-
-        return f(user, *args, **kwargs)
-
-    return decorator

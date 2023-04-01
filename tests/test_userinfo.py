@@ -1,9 +1,9 @@
 import pytest
 from bitmask import Bitmask
-from sachet.server.models import Permissions, UserSchema
+from sachet.server.models import Permissions, User
 from datetime import datetime
 
-user_schema = UserSchema()
+user_schema = User.get_schema(User)
 
 
 def test_get(client, tokens, validate_info):

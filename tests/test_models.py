@@ -1,4 +1,4 @@
-from sachet.server.models import patch
+from sachet.server.views_common import patch
 
 
 def test_patch():
