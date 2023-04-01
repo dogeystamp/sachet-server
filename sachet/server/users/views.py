@@ -3,7 +3,6 @@ from flask import Blueprint, request, jsonify
 from flask.views import MethodView
 from sachet.server.models import (
     auth_required,
-    read_token,
     patch,
     Permissions,
     User,
@@ -66,7 +65,7 @@ class LogoutAPI(MethodView):
             return jsonify({"status": "fail", "message": "Token already revoked."}), 400
 
         try:
-            data, token_user = read_token(token)
+            data, token_user = User.read_token(token)
         except jwt.ExpiredSignatureError:
             return jsonify({"status": "fail", "message": "Token already expired."}), 400
         except jwt.InvalidTokenError:

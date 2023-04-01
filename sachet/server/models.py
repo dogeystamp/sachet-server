@@ -87,6 +87,29 @@ class User(db.Model):
         return jwt.encode(payload, app.config.get("SECRET_KEY"), algorithm="HS256")
 
 
+    def read_token(token):
+        """Read a JWT and validate it.
+
+        Returns a tuple: dictionary of the JWT's data, and the corresponding user
+        if available.
+        """
+
+        data = jwt.decode(
+            token,
+            app.config["SECRET_KEY"],
+            algorithms=["HS256"],
+        )
+
+        if BlacklistToken.check_blacklist(token):
+            raise jwt.ExpiredSignatureError("Token revoked.")
+
+        user = User.query.filter_by(username=data.get("sub")).first()
+        if not user:
+            raise jwt.InvalidTokenError("No user corresponds to this token.")
+
+        return data, user
+
+
 class PermissionField(fields.Field):
     """Field that serializes a Permissions bitmask to an array of strings."""
 
@@ -155,29 +178,6 @@ class BlacklistToken(db.Model):
             return True
 
 
-def read_token(token):
-    """Read a JWT and validate it.
-
-    Returns a tuple: dictionary of the JWT's data, and the corresponding user
-    if available.
-    """
-
-    data = jwt.decode(
-        token,
-        app.config["SECRET_KEY"],
-        algorithms=["HS256"],
-    )
-
-    if BlacklistToken.check_blacklist(token):
-        raise jwt.ExpiredSignatureError("Token revoked.")
-
-    user = User.query.filter_by(username=data.get("sub")).first()
-    if not user:
-        raise jwt.InvalidTokenError("No user corresponds to this token.")
-
-    return data, user
-
-
 def auth_required(f):
     """Decorator to require authentication.
 
@@ -200,7 +200,7 @@ def auth_required(f):
             return jsonify({"status": "fail", "message": "Missing auth token"}), 401
 
         try:
-            data, user = read_token(token)
+            data, user = User.read_token(token)
         except jwt.ExpiredSignatureError:
             # if it's expired we don't want it lingering in the db
             BlacklistToken.check_blacklist(token)
