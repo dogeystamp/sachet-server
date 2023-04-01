@@ -18,7 +18,7 @@ class Permissions(IntFlag):
 
 
 class PermissionField(fields.Field):
-    """Field that serializes a Permissions bitmask to an array of strings."""
+    """Field that serializes a Permissions bitmask to an array of strings in Marshmallow."""
 
     def _serialize(self, value, attr, obj, **kwargs):
         mask = Bitmask()
@@ -41,6 +41,35 @@ class PermissionField(fields.Field):
         return mask
 
 
+class PermissionProperty:
+    """
+    Property to serialize/deserialize a Permissions Bitmask to an integer.
+
+    The integer will have the same name as this property, suffixed with "_number".
+    For example, use:
+
+        class User(db.Model):
+            permissions_number = db.Column(db.BigInteger, nullable=False, default=0)
+            permissions = PermissionProperty()
+    """
+
+    def __set_name__(self, owner, name):
+        self.name = name
+
+    def __get__(self, obj, objtype=None):
+        mask = Bitmask()
+        mask.AllFlags = Permissions
+        mask.value = getattr(obj, self.name + "_number")
+        return mask
+
+    def __set__(self, obj, value):
+        mask = Bitmask()
+        mask.AllFlags = Permissions
+        mask += value
+        setattr(obj, self.name + "_number", mask.value)
+        db.session.commit()
+
+
 class User(db.Model):
     __tablename__ = "users"
 
@@ -49,30 +78,7 @@ class User(db.Model):
     register_date = db.Column(db.DateTime, nullable=False)
 
     permissions_number = db.Column(db.BigInteger, nullable=False, default=0)
-
-    @property
-    def permissions(self):
-        """
-        Bitmask listing all permissions.
-
-        See the Permissions class for all possible permissions.
-
-        Also, see https://github.com/dogeystamp/bitmask for information on how
-        to use this field.
-        """
-
-        mask = Bitmask()
-        mask.AllFlags = Permissions
-        mask.value = self.permissions_number
-        return mask
-
-    @permissions.setter
-    def permissions(self, value):
-        mask = Bitmask()
-        mask.AllFlags = Permissions
-        mask += value
-        self.permissions_number = mask.value
-        db.session.commit()
+    permissions = PermissionProperty()
 
     def __init__(self, username, password, permissions):
         permissions.AllFlags = Permissions
