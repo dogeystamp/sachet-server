@@ -27,5 +27,9 @@ from sachet.server.users.views import users_blueprint
 
 app.register_blueprint(users_blueprint)
 
+from sachet.server.admin.views import admin_blueprint
+
+app.register_blueprint(admin_blueprint)
+
 with app.app_context():
     db.create_all()

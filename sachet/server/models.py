@@ -129,7 +129,7 @@ class User(db.Model):
 
             username = ma.auto_field()
             register_date = ma.auto_field()
-            permissions = PermissionField(data_key="permissions")
+            permissions = PermissionField()
 
         return Schema()
 
@@ -167,3 +167,24 @@ class BlacklistToken(db.Model):
             if entry.expires < datetime.datetime.utcnow():
                 db.session.delete(entry)
             return True
+
+
+class ServerSettings(db.Model):
+    __tablename__ = "server_settings"
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+
+    default_permissions_number = db.Column(db.BigInteger, nullable=False, default=0)
+    default_permissions = PermissionProperty()
+
+    def __init__(self, default_permissions=Bitmask(AllFlags=Permissions)):
+        self.default_permissions = default_permissions
+
+    def get_schema(self):
+        class Schema(ma.SQLAlchemySchema):
+            class Meta:
+                model = self
+
+            default_permissions = PermissionField()
+
+        return Schema()
