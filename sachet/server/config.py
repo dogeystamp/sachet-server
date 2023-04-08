@@ -8,16 +8,20 @@ class BaseConfig:
     SQLALCHEMY_DATABASE_URI = sqlalchemy_base + ".db"
     BCRYPT_LOG_ROUNDS = 13
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SACHET_STORAGE = "filesystem"
+    SACHET_FILE_DIR = "/srv/sachet/storage"
 
 
 class TestingConfig(BaseConfig):
     SQLALCHEMY_DATABASE_URI = sqlalchemy_base + "_test" + ".db"
     BCRYPT_LOG_ROUNDS = 4
+    SACHET_FILE_DIR = "storage_test"
 
 
 class DevelopmentConfig(BaseConfig):
     SQLALCHEMY_DATABASE_URI = sqlalchemy_base + "_dev" + ".db"
     BCRYPT_LOG_ROUNDS = 4
+    SACHET_FILE_DIR = "storage_dev"
 
 
 class ProductionConfig(BaseConfig):

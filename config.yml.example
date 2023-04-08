@@ -3,3 +3,5 @@
 SECRET_KEY: ""
 
 # BCRYPT_LOG_ROUNDS: 13
+# SACHET_STORAGE: "filesystem"
+# SACHET_FILE_DIR: "/srv/sachet/storage"

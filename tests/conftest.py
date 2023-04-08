@@ -2,22 +2,50 @@ import pytest
 import yaml
 from sachet.server.users import manage
 from click.testing import CliRunner
-from sachet.server import app, db
+from sachet.server import app, db, storage
 from sachet.server.models import Permissions, User
 from bitmask import Bitmask
+from pathlib import Path
+import random
+import itertools
 
 
 @pytest.fixture
-def client():
+def rand():
+    """Deterministic random data generator.
+
+    Be sure to seed 0 with each test!
+    """
+    r = random.Random()
+    r.seed(0)
+    return r
+
+
+@pytest.fixture
+def client(config={}):
     """Flask application with DB already set up and ready."""
     with app.test_client() as client:
         with app.app_context():
+            for k, v in config.items():
+                app.config[k] = v
+
             db.drop_all()
             db.create_all()
             db.session.commit()
             yield client
             db.session.remove()
             db.drop_all()
+            if app.config["SACHET_STORAGE"] == "filesystem":
+                for file in itertools.chain(
+                    storage._meta_directory.iterdir(),
+                    storage._files_directory.iterdir(),
+                ):
+                    if file.is_relative_to(Path(app.instance_path)) and file.is_file():
+                        file.unlink()
+                    else:
+                        raise OSError(
+                            f"Attempted to delete {file}: please delete it yourself."
+                        )
 
 
 @pytest.fixture

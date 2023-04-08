@@ -21,6 +21,17 @@ bcrypt = Bcrypt(app)
 db = SQLAlchemy(app)
 ma = Marshmallow()
 
+_storage_method = app.config["SACHET_STORAGE"]
+
+storage = None
+
+from sachet.storage import FileSystem
+
+if _storage_method == "filesystem":
+    storage = FileSystem()
+else:
+    raise ValueError(f"{_storage_method} is not a valid storage method.")
+
 import sachet.server.commands
 
 from sachet.server.users.views import users_blueprint
