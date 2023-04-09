@@ -78,14 +78,14 @@ class FileSystem(Storage):
         if not path.exists():
             raise OSError(f"Path {path} does not exist.")
         new_path = self._get_path(new_name)
-        if path.exists():
+        if new_path.exists():
             raise OSError(f"Path {path} already exists.")
 
         meta_path = self._get_meta_path(name)
-        if not path.exists():
+        if not meta_path.exists():
             raise OSError(f"Path {meta_path} does not exist.")
-        new_meta_path = self._get_meta_path(name)
-        if path.exists():
+        new_meta_path = self._get_meta_path(new_name)
+        if new_meta_path.exists():
             raise OSError(f"Path {path} already exists.")
 
         path.rename(new_path)

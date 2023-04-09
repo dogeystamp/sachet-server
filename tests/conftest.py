@@ -20,6 +20,18 @@ def rand():
     r.seed(0)
     return r
 
+def clear_filesystem():
+    if app.config["SACHET_STORAGE"] == "filesystem":
+        for file in itertools.chain(
+            storage._meta_directory.iterdir(),
+            storage._files_directory.iterdir(),
+        ):
+            if file.is_relative_to(Path(app.instance_path)) and file.is_file():
+                file.unlink()
+            else:
+                raise OSError(
+                    f"Attempted to delete {file}: please delete it yourself."
+                )
 
 @pytest.fixture
 def client(config={}):
@@ -32,20 +44,11 @@ def client(config={}):
             db.drop_all()
             db.create_all()
             db.session.commit()
+            clear_filesystem()
             yield client
+            clear_filesystem()
             db.session.remove()
             db.drop_all()
-            if app.config["SACHET_STORAGE"] == "filesystem":
-                for file in itertools.chain(
-                    storage._meta_directory.iterdir(),
-                    storage._files_directory.iterdir(),
-                ):
-                    if file.is_relative_to(Path(app.instance_path)) and file.is_file():
-                        file.unlink()
-                    else:
-                        raise OSError(
-                            f"Attempted to delete {file}: please delete it yourself."
-                        )
 
 
 @pytest.fixture
