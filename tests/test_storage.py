@@ -27,17 +27,18 @@ class TestSuite:
         ]
 
         for file in files:
-            storage.create(file["name"])
-            with storage.open(file["name"], mode="wb") as f:
+            handle = storage.get_file(file["name"])
+            with handle.open(mode="wb") as f:
                 f.write(file["data"])
-            storage.write_metadata(file["name"], file["metadata"])
+            handle.metadata.test_data = file["metadata"]
 
         for file in files:
-            with storage.open(file["name"], mode="rb") as f:
+            handle = storage.get_file(file["name"])
+            with handle.open(mode="rb") as f:
                 saved_data = f.read()
                 assert saved_data == file["data"]
-                saved_meta = storage.read_metadata(file["name"])
-                assert saved_meta == file["metadata"]
+            saved_meta = handle.metadata.test_data
+            assert saved_meta == file["metadata"]
 
         assert sorted([f.name for f in storage.list_files()]) == sorted(
             [f["name"] for f in files]
@@ -60,15 +61,16 @@ class TestSuite:
         ]
 
         for file in files:
-            storage.create(file["name"])
-            with storage.open(file["name"], mode="wb") as f:
+            handle = storage.get_file(file["name"])
+            with handle.open(mode="wb") as f:
                 f.write(file["data"])
-            storage.write_metadata(file["name"], file["metadata"])
-            storage.rename(file["name"], file["new_name"])
+            handle.metadata.test_data = file["metadata"]
+            handle.rename(file["new_name"])
 
         for file in files:
-            with storage.open(file["new_name"], mode="rb") as f:
+            handle = storage.get_file(file["new_name"])
+            with handle.open(mode="rb") as f:
                 saved_data = f.read()
                 assert saved_data == file["data"]
-                saved_meta = storage.read_metadata(file["new_name"])
-                assert saved_meta == file["metadata"]
+            saved_meta = handle.metadata.test_data
+            assert saved_meta == file["metadata"]

@@ -1,12 +1,14 @@
 from sachet.storage import Storage
 from pathlib import Path
-from sachet.server import app
 from werkzeug.utils import secure_filename
 import json
 
 
 class FileSystem(Storage):
     def __init__(self):
+        # prevent circular import when inspecting this file outside of Flask
+        from sachet.server import app
+
         config_path = Path(app.config["SACHET_FILE_DIR"])
         if config_path.is_absolute():
             self._directory = config_path
@@ -30,66 +32,65 @@ class FileSystem(Storage):
         name = secure_filename(name)
         return self._meta_directory / Path(name)
 
-    def create(self, name):
-        path = self._get_path(name)
-        if path.exists():
-            raise OSError(f"Path {path} already exists.")
-
-        meta_path = self._get_meta_path(name)
-        if meta_path.exists():
-            raise OSError(f"Path {meta_path} already exists.")
-
-        path.touch()
-        meta_path.touch()
-
-    def delete(self, name):
-        path = self._get_path(name)
-        if not path.exists():
-            raise OSError(f"Path {path} does not exist.")
-        path.unlink()
-
-    def open(self, name, mode="r"):
-        path = self._get_path(name)
-        if not path.exists():
-            raise OSError(f"Path {path} does not exist.")
-
-        return path.open(mode=mode)
-
-    def read_metadata(self, name):
-        meta_path = self._get_meta_path(name)
-        if not meta_path.exists():
-            raise OSError(f"Path {meta_path} does not exist.")
-
-        with meta_path.open() as meta_file:
-            content = meta_file.read()
-            return json.loads(content)
-
-    def write_metadata(self, name, data):
-        meta_path = self._get_meta_path(name)
-        if not meta_path.exists():
-            raise OSError(f"Path {meta_path} does not exist.")
-
-        with meta_path.open("w") as meta_file:
-            content = json.dumps(data)
-            meta_file.write(content)
-
-    def rename(self, name, new_name):
-        path = self._get_path(name)
-        if not path.exists():
-            raise OSError(f"Path {path} does not exist.")
-        new_path = self._get_path(new_name)
-        if new_path.exists():
-            raise OSError(f"Path {path} already exists.")
-
-        meta_path = self._get_meta_path(name)
-        if not meta_path.exists():
-            raise OSError(f"Path {meta_path} does not exist.")
-        new_meta_path = self._get_meta_path(new_name)
-        if new_meta_path.exists():
-            raise OSError(f"Path {path} already exists.")
-
-        path.rename(new_path)
-        meta_path.rename(new_meta_path)
-
     def list_files(self):
-        return [x for x in self._files_directory.iterdir() if x.is_file()]
+        return [
+            self.get_file(x.name)
+            for x in self._files_directory.iterdir()
+            if x.is_file()
+        ]
+
+    def get_file(self, name):
+        return self.File(self, name)
+
+    class File:
+        def __init__(self, storage, name):
+            self.name = name
+            self._storage = storage
+            self._path = self._storage._get_path(name)
+            self._meta_path = self._storage._get_meta_path(name)
+            self._path.touch()
+            self._meta_path.touch()
+            self.metadata = self._Metadata(self)
+
+        def delete(self, name):
+            self._path.unlink()
+            self._meta_path.unlink()
+
+        def open(self, mode="r"):
+            return self._path.open(mode=mode)
+
+        def rename(self, new_name):
+            new_path = self._storage._get_path(new_name)
+            if new_path.exists():
+                raise OSError(f"Path {path} already exists.")
+
+            new_meta_path = self._storage._get_meta_path(new_name)
+            if new_meta_path.exists():
+                raise OSError(f"Path {path} already exists.")
+
+            self._path.rename(new_path)
+            self._meta_path.rename(new_meta_path)
+
+        class _Metadata:
+            def __init__(self, file):
+                self.__dict__["_file"] = file
+
+            @property
+            def __data(self):
+                with self._file._meta_path.open() as meta_file:
+                    content = meta_file.read()
+                    if len(content.strip()) == 0:
+                        return {}
+                    return json.loads(content)
+
+            # there is no setter for __data because it would cause __setattr__ to infinitely recurse
+
+            def __setattr__(self, name, value):
+                data = self.__data
+                data[name] = value
+                with self._file._meta_path.open("w") as meta_file:
+                    content = json.dumps(data)
+                    meta_file.write(content)
+
+            def __getattr__(self, name):
+                return self.__data.get(name, None)

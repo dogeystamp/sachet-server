@@ -20,6 +20,7 @@ def rand():
     r.seed(0)
     return r
 
+
 def clear_filesystem():
     if app.config["SACHET_STORAGE"] == "filesystem":
         for file in itertools.chain(
@@ -29,9 +30,8 @@ def clear_filesystem():
             if file.is_relative_to(Path(app.instance_path)) and file.is_file():
                 file.unlink()
             else:
-                raise OSError(
-                    f"Attempted to delete {file}: please delete it yourself."
-                )
+                raise OSError(f"Attempted to delete {file}: please delete it yourself.")
+
 
 @pytest.fixture
 def client(config={}):
