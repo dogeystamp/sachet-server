@@ -126,12 +126,12 @@ class UserAPI(ModelAPI):
 
         return super().get(info_user)
 
-    @auth_required(require_admin=True)
+    @auth_required(required_permissions=(Permissions.ADMIN,))
     def patch(self, username, auth_user=None):
         patch_user = User.query.filter_by(username=username).first()
         return super().patch(patch_user)
 
-    @auth_required(require_admin=True)
+    @auth_required(required_permissions=(Permissions.ADMIN,))
     def put(self, username, auth_user=None):
         put_user = User.query.filter_by(username=username).first()
         return super().put(put_user)

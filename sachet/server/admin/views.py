@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from flask.views import MethodView
-from sachet.server.models import ServerSettings
+from sachet.server.models import ServerSettings, Permissions
 from sachet.server import db
 from sachet.server.views_common import auth_required, ModelAPI
 
@@ -18,17 +18,17 @@ class ServerSettingsAPI(ModelAPI):
             return settings
         return rows[-1]
 
-    @auth_required(require_admin=True)
+    @auth_required(required_permissions=(Permissions.ADMIN,))
     def get(self, auth_user=None):
         settings = self.get_settings()
         return super().get(settings)
 
-    @auth_required(require_admin=True)
+    @auth_required(required_permissions=(Permissions.ADMIN,))
     def patch(self, auth_user=None):
         settings = self.get_settings()
         return super().patch(settings)
 
-    @auth_required(require_admin=True)
+    @auth_required(required_permissions=(Permissions.ADMIN,))
     def put(self, auth_user=None):
         settings = self.get_settings()
         return super().put(settings)

@@ -1,16 +1,24 @@
 from flask import request, jsonify
 from flask.views import MethodView
 from sachet.server.models import Permissions, User, BlacklistToken
+from sachet.server import db
 from functools import wraps
 from marshmallow import ValidationError
+from bitmask import Bitmask
 import jwt
 
 
-def auth_required(func=None, *, require_admin=False):
+def auth_required(func=None, *, required_permissions=()):
     """Decorator to require authentication.
 
     Passes an argument 'user' to the function, with a User object corresponding
     to the authenticated session.
+
+    Parameters
+    ----------
+
+    required_permissions : tuple of Permissions
+        Permissions required to access this endpoint.
     """
 
     # see https://stackoverflow.com/questions/3888158/making-decorators-with-optional-arguments
@@ -44,12 +52,15 @@ def auth_required(func=None, *, require_admin=False):
                     401,
                 )
 
-            if require_admin and Permissions.ADMIN not in user.permissions:
+            if (
+                Bitmask(AllFlags=Permissions, *required_permissions)
+                not in user.permissions
+            ):
                 return (
                     jsonify(
                         {
                             "status": "fail",
-                            "message": "Administrator permission is required to see this page.",
+                            "message": "Missing permissions to access this page.",
                         }
                     ),
                     403,
@@ -112,6 +123,8 @@ class ModelAPI(MethodView):
         for k, v in deserialized.items():
             setattr(model, k, v)
 
+        db.session.commit()
+
         resp = {
             "status": "success",
         }
@@ -138,7 +151,37 @@ class ModelAPI(MethodView):
         for k, v in deserialized.items():
             setattr(model, k, v)
 
+        db.session.commit()
+
         resp = {
             "status": "success",
         }
         return jsonify(resp), 200
+
+    def delete(self, model):
+        if not model:
+            resp = {
+                "status": "fail",
+                "message": "This resource does not exist.",
+            }
+            return jsonify(resp), 404
+
+        model.delete()
+        db.session.commit()
+
+        return jsonify({"status": "success"})
+
+    def post(self, ModelClass, data):
+        model_schema = ModelClass.get_schema()
+
+        post_json = request.get_json()
+        try:
+            deserialized = model_schema.load(post_json)
+        except ValidationError as e:
+            resp = {"status": "fail", "message": f"Invalid data: {str(e)}"}
+            return jsonify(resp), 400
+
+        # create new ModelClass instance with all the parameters given in the request
+        model = ModelClass(**deserialized)
+
+        return jsonify({"status": "success"}), 201
