@@ -1,5 +1,4 @@
 import pytest
-import yaml
 from sachet.server.users import manage
 from click.testing import CliRunner
 from sachet.server import app, db, storage
@@ -7,7 +6,6 @@ from sachet.server.models import Permissions, User
 from bitmask import Bitmask
 from pathlib import Path
 import random
-import itertools
 
 
 @pytest.fixture
@@ -23,10 +21,7 @@ def rand():
 
 def clear_filesystem():
     if app.config["SACHET_STORAGE"] == "filesystem":
-        for file in itertools.chain(
-            storage._meta_directory.iterdir(),
-            storage._files_directory.iterdir(),
-        ):
+        for file in storage._files_directory.iterdir():
             if file.is_relative_to(Path(app.instance_path)) and file.is_file():
                 file.unlink()
             else:
@@ -67,7 +62,12 @@ def users(client):
     Returns a dictionary with all the info for each user.
     """
     userinfo = dict(
-        jeff=dict(password="1234", permissions=Bitmask()),
+        jeff=dict(
+            password="1234",
+            permissions=Bitmask(
+                Permissions.CREATE, Permissions.READ, Permissions.DELETE
+            ),
+        ),
         administrator=dict(password="4321", permissions=Bitmask(Permissions.ADMIN)),
     )
 

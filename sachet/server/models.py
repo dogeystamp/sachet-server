@@ -1,11 +1,12 @@
-from sachet.server import app, db, ma, bcrypt
-from marshmallow import fields, ValidationError
-from flask import request, jsonify
-from functools import wraps
+from sachet.server import app, db, ma, bcrypt, storage
 import datetime
 import jwt
-from bitmask import Bitmask
 from enum import IntFlag
+from bitmask import Bitmask
+from marshmallow import fields, ValidationError
+from flask import request, jsonify, url_for
+from sqlalchemy_utils import UUIDType
+import uuid
 
 
 class Permissions(IntFlag):
@@ -15,6 +16,7 @@ class Permissions(IntFlag):
     LOCK = 1 << 3
     LIST = 1 << 4
     ADMIN = 1 << 5
+    READ = 1 << 6
 
 
 class PermissionField(fields.Field):
@@ -188,3 +190,63 @@ class ServerSettings(db.Model):
             default_permissions = PermissionField()
 
         return Schema()
+
+
+class Share(db.Model):
+    """Share for a single file.
+
+    Parameters
+    ----------
+    owner : User
+        Assign this share to this user.
+
+    Attributes
+    ----------
+    share_id : uuid.uuid4
+        Unique identifier for this given share.
+    owner : User
+        The user who owns this share.
+    initialized : bool
+        Since only the metadata is uploaded first, this switches to True when
+        the real data is uploaded.
+    create_date : DateTime
+        Time the share was created (not initialized.)
+
+    Methods
+    -------
+    get_handle():
+        Obtain a sachet.storage.Storage.File handle. This can be used to modify
+        the file contents.
+    """
+
+    __tablename__ = "shares"
+
+    share_id = db.Column(UUIDType(), primary_key=True, default=uuid.uuid4)
+
+    owner_name = db.Column(db.String, db.ForeignKey("users.username"))
+    owner = db.relationship("User", backref=db.backref("owner"))
+
+    initialized = db.Column(db.Boolean, nullable=False, default=False)
+
+    create_date = db.Column(db.DateTime, nullable=False)
+
+    def __init__(self, owner_name):
+        self.owner = User.query.filter_by(username=owner_name).first()
+        self.owner_name = self.owner.username
+        self.share_id = uuid.uuid4()
+        self.url = url_for("files_blueprint.files_api", share_id=self.share_id)
+        self.create_date = datetime.datetime.now()
+
+    def get_schema(self):
+        class Schema(ma.SQLAlchemySchema):
+            class Meta:
+                model = self
+
+            share_id = ma.auto_field(dump_only=True)
+            owner_name = ma.auto_field()
+            initialized = ma.auto_field(dump_only=True)
+
+        return Schema()
+
+    def get_handle(self):
+        return storage.get_file(str(self.share_id))

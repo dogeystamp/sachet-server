@@ -166,17 +166,25 @@ class ModelAPI(MethodView):
             }
             return jsonify(resp), 404
 
-        model.delete()
+        db.session.delete(model)
         db.session.commit()
 
         return jsonify({"status": "success"})
 
-    def post(self, ModelClass, data):
-        model_schema = ModelClass.get_schema()
+    def post(self, ModelClass, data={}):
+        """Create new instance of a class.
 
-        post_json = request.get_json()
+        Parameters
+        ----------
+        ModelClass
+            Class to make an instance of.
+        data : dict
+            Object that can be loaded with Marshmallow to create the class.
+        """
+        model_schema = ModelClass.get_schema(ModelClass)
+
         try:
-            deserialized = model_schema.load(post_json)
+            deserialized = model_schema.load(data)
         except ValidationError as e:
             resp = {"status": "fail", "message": f"Invalid data: {str(e)}"}
             return jsonify(resp), 400
@@ -184,4 +192,7 @@ class ModelAPI(MethodView):
         # create new ModelClass instance with all the parameters given in the request
         model = ModelClass(**deserialized)
 
-        return jsonify({"status": "success"}), 201
+        db.session.add(model)
+        db.session.commit()
+
+        return jsonify({"status": "success", "url": model.url}), 201

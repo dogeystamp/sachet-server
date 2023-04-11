@@ -33,14 +33,12 @@ class Storage:
         pass
 
     class File:
-        """Handle for a file and its metadata.
+        """Handle for a file.
 
         Do not instantiate this; use `Storage.get_file()`.
 
         Attributes
         ----------
-        metadata : _Metadata
-            All the metadata, accessible via dot attribute notation.
         name : str
             Filename
         """
@@ -63,7 +61,7 @@ class Storage:
             pass
 
         def delete(self):
-            """Delete file and associated metadata."""
+            """Delete file."""
 
             pass
 

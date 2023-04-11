@@ -42,5 +42,9 @@ from sachet.server.admin.views import admin_blueprint
 
 app.register_blueprint(admin_blueprint)
 
+from sachet.server.files.views import files_blueprint
+
+app.register_blueprint(files_blueprint)
+
 with app.app_context():
     db.create_all()
