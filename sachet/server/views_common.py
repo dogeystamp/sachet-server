@@ -100,6 +100,13 @@ class ModelAPI(MethodView):
         return jsonify(model.get_schema().dump(model))
 
     def patch(self, model):
+        if not model:
+            resp = {
+                "status": "fail",
+                "message": "This resource does not exist.",
+            }
+            return jsonify(resp), 404
+
         model_schema = model.get_schema()
 
         if not model:
