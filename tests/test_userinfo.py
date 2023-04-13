@@ -6,50 +6,50 @@ from datetime import datetime
 user_schema = User.get_schema(User)
 
 
-def test_get(client, tokens, validate_info):
+def test_get(client, auth, validate_info):
     """Test accessing the user information endpoint as a normal user."""
 
     # access user info endpoint
     resp = client.get(
-        "/users/jeff", headers={"Authorization": f"bearer {tokens['jeff']}"}
+        "/users/jeff", headers=auth("jeff")
     )
     assert resp.status_code == 200
     validate_info("jeff", resp.get_json())
 
     # access other user's info endpoint
     resp = client.get(
-        "/users/administrator", headers={"Authorization": f"bearer {tokens['jeff']}"}
+        "/users/administrator", headers=auth("jeff")
     )
     assert resp.status_code == 403
 
 
-def test_userinfo_admin(client, tokens, validate_info):
+def test_userinfo_admin(client, auth, validate_info):
     """Test accessing other user's information as an admin."""
 
     # first test that admin can access its own info
     resp = client.get(
         "/users/administrator",
-        headers={"Authorization": f"bearer {tokens['administrator']}"},
+        headers=auth("administrator"),
     )
     assert resp.status_code == 200
     validate_info("administrator", resp.get_json())
 
     # now test accessing other user's info
     resp = client.get(
-        "/users/jeff", headers={"Authorization": f"bearer {tokens['administrator']}"}
+        "/users/jeff", headers=auth("administrator")
     )
     assert resp.status_code == 200
     validate_info("jeff", resp.get_json())
 
 
-def test_patch(client, users, tokens, validate_info):
+def test_patch(client, users, auth, validate_info):
     """Test modifying user information as an administrator."""
 
     # try with regular user to make sure it doesn't work
     resp = client.patch(
         "/users/jeff",
         json={"permissions": ["ADMIN"]},
-        headers={"Authorization": f"bearer {tokens['jeff']}"},
+        headers=auth("jeff"),
     )
     assert resp.status_code == 403
 
@@ -57,14 +57,14 @@ def test_patch(client, users, tokens, validate_info):
     resp = client.patch(
         "/users/jeff",
         json="hurr durr",
-        headers={"Authorization": f"bearer {tokens['administrator']}"},
+        headers=auth("administrator"),
     )
     assert resp.status_code == 400
 
     resp = client.patch(
         "/users/jeff",
         json={"permissions": ["ADMIN"]},
-        headers={"Authorization": f"bearer {tokens['administrator']}"},
+        headers=auth("administrator"),
     )
     assert resp.status_code == 200
 
@@ -73,20 +73,20 @@ def test_patch(client, users, tokens, validate_info):
 
     # request new info
     resp = client.get(
-        "/users/jeff", headers={"Authorization": f"bearer {tokens['jeff']}"}
+        "/users/jeff", headers=auth("jeff")
     )
     assert resp.status_code == 200
     validate_info("jeff", resp.get_json())
 
 
-def test_put(client, users, tokens, validate_info):
+def test_put(client, users, auth, validate_info):
     """Test replacing user information as an administrator."""
 
     # try with regular user to make sure it doesn't work
     resp = client.patch(
         "/users/jeff",
         json=dict(),
-        headers={"Authorization": f"bearer {tokens['jeff']}"},
+        headers=auth("jeff"),
     )
     assert resp.status_code == 403
 
@@ -97,7 +97,7 @@ def test_put(client, users, tokens, validate_info):
     resp = client.put(
         "/users/jeff",
         json=user_schema.dump(new_data),
-        headers={"Authorization": f"bearer {tokens['administrator']}"},
+        headers=auth("administrator"),
     )
     assert resp.status_code == 200
 
@@ -106,7 +106,7 @@ def test_put(client, users, tokens, validate_info):
 
     # request new info
     resp = client.get(
-        "/users/jeff", headers={"Authorization": f"bearer {tokens['jeff']}"}
+        "/users/jeff", headers=auth("jeff")
     )
     assert resp.status_code == 200
     validate_info("jeff", resp.get_json())

@@ -69,12 +69,12 @@ def test_login(client, users):
     assert token is not None and token != ""
 
 
-def test_extend(client, tokens, validate_info):
+def test_extend(client, tokens, validate_info, auth):
     """Test extending the token lifespan (get a new one with later expiry)."""
 
     # obtain new token
     resp = client.post(
-        "/users/extend", headers={"Authorization": f"Bearer {tokens['jeff']}"}
+        "/users/extend", headers=auth("jeff")
     )
     assert resp.status_code == 200
     resp_json = resp.get_json()
@@ -87,7 +87,7 @@ def test_extend(client, tokens, validate_info):
     resp = client.post(
         "/users/logout",
         json={"token": tokens["jeff"]},
-        headers={"Authorization": f"bearer {tokens['jeff']}"},
+        headers=auth("jeff"),
     )
 
     # log in with the new token
@@ -97,7 +97,7 @@ def test_extend(client, tokens, validate_info):
     validate_info("jeff", resp_json)
 
 
-def test_logout(client, tokens, validate_info):
+def test_logout(client, tokens, validate_info, auth):
     """Test logging out."""
 
     # unauthenticated
@@ -109,7 +109,7 @@ def test_logout(client, tokens, validate_info):
 
     # missing token
     resp = client.post(
-        "/users/logout", json={}, headers={"Authorization": f"bearer {tokens['jeff']}"}
+        "/users/logout", json={}, headers=auth("jeff")
     )
     assert resp.status_code == 400
 
@@ -117,7 +117,7 @@ def test_logout(client, tokens, validate_info):
     resp = client.post(
         "/users/logout",
         json={"token": "not.real.jwt"},
-        headers={"Authorization": f"bearer {tokens['jeff']}"},
+        headers=auth("jeff"),
     )
     assert resp.status_code == 400
 
@@ -125,13 +125,13 @@ def test_logout(client, tokens, validate_info):
     resp = client.post(
         "/users/logout",
         json={"token": tokens["administrator"]},
-        headers={"Authorization": f"bearer {tokens['jeff']}"},
+        headers=auth("jeff"),
     )
     assert resp.status_code == 403
 
     # check that we can access this endpoint before logging out
     resp = client.get(
-        "/users/jeff", headers={"Authorization": f"bearer {tokens['jeff']}"}
+        "/users/jeff", headers=auth("jeff")
     )
     assert resp.status_code == 200
     validate_info("jeff", resp.get_json())
@@ -140,32 +140,32 @@ def test_logout(client, tokens, validate_info):
     resp = client.post(
         "/users/logout",
         json={"token": tokens["jeff"]},
-        headers={"Authorization": f"bearer {tokens['jeff']}"},
+        headers=auth("jeff"),
     )
     assert resp.status_code == 200
 
     # check that the logout worked
 
     resp = client.get(
-        "/users/jeff", headers={"Authorization": f"bearer {tokens['jeff']}"}
+        "/users/jeff", headers=auth("jeff")
     )
     assert resp.status_code == 401
 
 
-def test_admin_revoke(client, tokens, validate_info):
+def test_admin_revoke(client, tokens, validate_info, auth):
     """Test that an admin can revoke any token from other users."""
 
     resp = client.post(
         "/users/logout",
         json={"token": tokens["jeff"]},
-        headers={"Authorization": f"bearer {tokens['administrator']}"},
+        headers=auth("administrator"),
     )
     assert resp.status_code == 200
 
     # check that the logout worked
 
     resp = client.get(
-        "/users/jeff", headers={"Authorization": f"bearer {tokens['jeff']}"}
+        "/users/jeff", headers=auth("jeff")
     )
     assert resp.status_code == 401
 
@@ -174,6 +174,6 @@ def test_admin_revoke(client, tokens, validate_info):
     resp = client.post(
         "/users/logout",
         json={"token": tokens["jeff"]},
-        headers={"Authorization": f"bearer {tokens['administrator']}"},
+        headers=auth("administrator"),
     )
     assert resp.status_code == 400

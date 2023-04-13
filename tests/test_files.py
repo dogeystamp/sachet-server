@@ -9,10 +9,10 @@ from werkzeug.datastructures import FileStorage
 # this might be redundant because test_storage tests the backends already
 @pytest.mark.parametrize("client", [{"SACHET_STORAGE": "filesystem"}], indirect=True)
 class TestSuite:
-    def test_sharing(self, client, users, tokens, rand):
+    def test_sharing(self, client, users, auth, rand):
         # create share
         resp = client.post(
-            "/files", headers={"Authorization": f"bearer {tokens['jeff']}"}
+            "/files", headers=auth("jeff")
         )
         assert resp.status_code == 201
 
@@ -27,7 +27,7 @@ class TestSuite:
         # upload file to share
         resp = client.post(
             url + "/content",
-            headers={"Authorization": f"bearer {tokens['jeff']}"},
+            headers=auth("jeff"),
             data={
                 "upload": FileStorage(stream=BytesIO(upload_data), filename="upload")
             },
@@ -38,7 +38,7 @@ class TestSuite:
         # test not allowing re-upload
         resp = client.post(
             url + "/content",
-            headers={"Authorization": f"bearer {tokens['jeff']}"},
+            headers=auth("jeff"),
             data={
                 "upload": FileStorage(stream=BytesIO(upload_data), filename="upload")
             },
@@ -49,20 +49,20 @@ class TestSuite:
         # read file
         resp = client.get(
             url + "/content",
-            headers={"Authorization": f"bearer {tokens['jeff']}"},
+            headers=auth("jeff"),
         )
         assert resp.data == upload_data
 
         # test deletion
         resp = client.delete(
             url,
-            headers={"Authorization": f"bearer {tokens['jeff']}"},
+            headers=auth("jeff"),
         )
         assert resp.status_code == 200
 
         # file shouldn't exist anymore
         resp = client.get(
             url + "/content",
-            headers={"Authorization": f"bearer {tokens['jeff']}"},
+            headers=auth("jeff"),
         )
         assert resp.status_code == 404

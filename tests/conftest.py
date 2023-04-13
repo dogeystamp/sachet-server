@@ -122,3 +122,27 @@ def tokens(client, users):
 def cli():
     """click's testing fixture"""
     return CliRunner()
+
+
+@pytest.fixture
+def auth(tokens):
+    """Generate auth headers.
+
+    Parameters
+    ----------
+    username : str
+        Username to authenticate as.
+    data : dict
+        Extra headers to add.
+
+    Returns
+    -------
+    dict
+        Dictionary of all headers.
+    """
+    def auth_headers(username, data={}):
+        ret = {"Authorization": f"bearer {tokens[username]}"}
+        ret.update(data)
+        return ret
+
+    return auth_headers
