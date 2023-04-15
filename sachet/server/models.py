@@ -211,6 +211,8 @@ class Share(db.Model):
         the real data is uploaded.
     create_date : DateTime
         Time the share was created (not initialized.)
+    file_name : str
+        File name to download as.
 
     Methods
     -------
@@ -230,12 +232,18 @@ class Share(db.Model):
 
     create_date = db.Column(db.DateTime, nullable=False)
 
-    def __init__(self, owner_name):
+    file_name = db.Column(db.String, nullable=False)
+
+    def __init__(self, owner_name, file_name=None):
         self.owner = User.query.filter_by(username=owner_name).first()
         self.owner_name = self.owner.username
         self.share_id = uuid.uuid4()
         self.url = url_for("files_blueprint.files_api", share_id=self.share_id)
         self.create_date = datetime.datetime.now()
+        if file_name:
+            self.file_name = file_name
+        else:
+            self.file_name = str(self.share_id)
 
     def get_schema(self):
         class Schema(ma.SQLAlchemySchema):
@@ -244,6 +252,7 @@ class Share(db.Model):
 
             share_id = ma.auto_field(dump_only=True)
             owner_name = ma.auto_field()
+            file_name = ma.auto_field()
             initialized = ma.auto_field(dump_only=True)
 
         return Schema()

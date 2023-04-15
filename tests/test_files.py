@@ -12,7 +12,9 @@ import uuid
 class TestSuite:
     def test_sharing(self, client, users, auth, rand):
         # create share
-        resp = client.post("/files", headers=auth("jeff"))
+        resp = client.post(
+            "/files", headers=auth("jeff"), json={"file_name": "content.bin"}
+        )
         assert resp.status_code == 201
 
         data = resp.get_json()
@@ -40,6 +42,7 @@ class TestSuite:
             headers=auth("jeff"),
         )
         assert resp.data == upload_data
+        assert resp.headers["Content-Disposition"] == "inline; filename=content.bin"
 
         # test deletion
         resp = client.delete(
@@ -85,7 +88,9 @@ class TestSuite:
         assert resp.status_code == 403
 
         # valid share creation to move on to testing content endpoint
-        resp = client.post("/files", headers=auth("jeff"))
+        resp = client.post(
+            "/files", headers=auth("jeff"), json={"file_name": "content.bin"}
+        )
         assert resp.status_code == 201
         data = resp.get_json()
         url = data.get("url")

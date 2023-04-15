@@ -43,8 +43,7 @@ files_blueprint.add_url_rule(
 class FileCreationAPI(ModelAPI):
     @auth_required(required_permissions=(Permissions.CREATE,))
     def post(self, auth_user=None):
-        # silent means it will return None if there is no JSON
-        data = request.get_json(silent=True) or {}
+        data = request.get_json()
         data["owner_name"] = auth_user.username
         return super().post(Share, data)
 
@@ -157,7 +156,7 @@ class FileContentAPI(ModelAPI):
         with file.open(mode="rb") as f:
             data = f.read()
 
-        return send_file(io.BytesIO(data), download_name=str(share.share_id))
+        return send_file(io.BytesIO(data), download_name=share.file_name)
 
 
 files_blueprint.add_url_rule(
