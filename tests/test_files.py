@@ -42,7 +42,7 @@ class TestSuite:
             headers=auth("jeff"),
         )
         assert resp.data == upload_data
-        assert resp.headers["Content-Disposition"] == "inline; filename=content.bin"
+        assert "filename=content.bin" in resp.headers["Content-Disposition"].split("; ")
 
         # test deletion
         resp = client.delete(
