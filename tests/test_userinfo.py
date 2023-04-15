@@ -10,16 +10,12 @@ def test_get(client, auth, validate_info):
     """Test accessing the user information endpoint as a normal user."""
 
     # access user info endpoint
-    resp = client.get(
-        "/users/jeff", headers=auth("jeff")
-    )
+    resp = client.get("/users/jeff", headers=auth("jeff"))
     assert resp.status_code == 200
     validate_info("jeff", resp.get_json())
 
     # access other user's info endpoint
-    resp = client.get(
-        "/users/administrator", headers=auth("jeff")
-    )
+    resp = client.get("/users/administrator", headers=auth("jeff"))
     assert resp.status_code == 403
 
 
@@ -35,9 +31,7 @@ def test_userinfo_admin(client, auth, validate_info):
     validate_info("administrator", resp.get_json())
 
     # now test accessing other user's info
-    resp = client.get(
-        "/users/jeff", headers=auth("administrator")
-    )
+    resp = client.get("/users/jeff", headers=auth("administrator"))
     assert resp.status_code == 200
     validate_info("jeff", resp.get_json())
 
@@ -72,9 +66,7 @@ def test_patch(client, users, auth, validate_info):
     users["jeff"]["permissions"] = Bitmask(Permissions.ADMIN)
 
     # request new info
-    resp = client.get(
-        "/users/jeff", headers=auth("jeff")
-    )
+    resp = client.get("/users/jeff", headers=auth("jeff"))
     assert resp.status_code == 200
     validate_info("jeff", resp.get_json())
 
@@ -105,8 +97,6 @@ def test_put(client, users, auth, validate_info):
     users["jeff"]["permissions"] = Bitmask(Permissions.ADMIN)
 
     # request new info
-    resp = client.get(
-        "/users/jeff", headers=auth("jeff")
-    )
+    resp = client.get("/users/jeff", headers=auth("jeff"))
     assert resp.status_code == 200
     validate_info("jeff", resp.get_json())

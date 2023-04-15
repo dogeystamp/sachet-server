@@ -65,7 +65,45 @@ def users(client):
         jeff=dict(
             password="1234",
             permissions=Bitmask(
+                Permissions.CREATE,
+                Permissions.READ,
+                Permissions.DELETE,
+                Permissions.MODIFY,
+            ),
+        ),
+        dave=dict(
+            password="1234",
+            permissions=Bitmask(
                 Permissions.CREATE, Permissions.READ, Permissions.DELETE
+            ),
+        ),
+        # admins don't have the other permissions by default,
+        # but admins can add perms to themselves
+        no_create_user=dict(
+            password="password",
+            permissions=Bitmask(
+                Permissions.READ,
+                Permissions.DELETE,
+                Permissions.ADMIN,
+                Permissions.MODIFY,
+            ),
+        ),
+        no_read_user=dict(
+            password="password",
+            permissions=Bitmask(
+                Permissions.CREATE,
+                Permissions.DELETE,
+                Permissions.ADMIN,
+                Permissions.MODIFY,
+            ),
+        ),
+        no_modify_user=dict(
+            password="password",
+            permissions=Bitmask(
+                Permissions.CREATE,
+                Permissions.DELETE,
+                Permissions.ADMIN,
+                Permissions.READ,
             ),
         ),
         administrator=dict(password="4321", permissions=Bitmask(Permissions.ADMIN)),
@@ -140,6 +178,7 @@ def auth(tokens):
     dict
         Dictionary of all headers.
     """
+
     def auth_headers(username, data={}):
         ret = {"Authorization": f"bearer {tokens[username]}"}
         ret.update(data)

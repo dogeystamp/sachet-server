@@ -73,9 +73,7 @@ def test_extend(client, tokens, validate_info, auth):
     """Test extending the token lifespan (get a new one with later expiry)."""
 
     # obtain new token
-    resp = client.post(
-        "/users/extend", headers=auth("jeff")
-    )
+    resp = client.post("/users/extend", headers=auth("jeff"))
     assert resp.status_code == 200
     resp_json = resp.get_json()
     new_token = resp_json.get("auth_token")
@@ -108,9 +106,7 @@ def test_logout(client, tokens, validate_info, auth):
     assert resp.status_code == 401
 
     # missing token
-    resp = client.post(
-        "/users/logout", json={}, headers=auth("jeff")
-    )
+    resp = client.post("/users/logout", json={}, headers=auth("jeff"))
     assert resp.status_code == 400
 
     # invalid token
@@ -130,9 +126,7 @@ def test_logout(client, tokens, validate_info, auth):
     assert resp.status_code == 403
 
     # check that we can access this endpoint before logging out
-    resp = client.get(
-        "/users/jeff", headers=auth("jeff")
-    )
+    resp = client.get("/users/jeff", headers=auth("jeff"))
     assert resp.status_code == 200
     validate_info("jeff", resp.get_json())
 
@@ -146,9 +140,7 @@ def test_logout(client, tokens, validate_info, auth):
 
     # check that the logout worked
 
-    resp = client.get(
-        "/users/jeff", headers=auth("jeff")
-    )
+    resp = client.get("/users/jeff", headers=auth("jeff"))
     assert resp.status_code == 401
 
 
@@ -164,9 +156,7 @@ def test_admin_revoke(client, tokens, validate_info, auth):
 
     # check that the logout worked
 
-    resp = client.get(
-        "/users/jeff", headers=auth("jeff")
-    )
+    resp = client.get("/users/jeff", headers=auth("jeff"))
     assert resp.status_code == 401
 
     # try revoking twice

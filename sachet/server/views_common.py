@@ -97,6 +97,13 @@ class ModelAPI(MethodView):
     """Generic REST API for interacting with models."""
 
     def get(self, model):
+        if not model:
+            resp = {
+                "status": "fail",
+                "message": "This resource does not exist.",
+            }
+            return jsonify(resp), 404
+
         return jsonify(model.get_schema().dump(model))
 
     def patch(self, model):
