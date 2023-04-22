@@ -124,7 +124,12 @@ class ModelAPI(MethodView):
             return jsonify(resp), 404
 
         patch_json = request.get_json()
-        orig_json = model_schema.dump(model)
+
+        dump = model_schema.dump(model)
+        orig_json = {}
+        for field, opts in model_schema.fields.items():
+            if not opts.dump_only and not opts.load_only:
+                orig_json[field] = dump[field]
 
         new_json = patch(orig_json, patch_json)
 

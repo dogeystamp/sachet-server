@@ -58,6 +58,54 @@ class TestSuite:
         )
         assert resp.status_code == 404
 
+    def test_modification(self, client, users, auth, rand):
+        # create share
+        resp = client.post(
+            "/files", headers=auth("jeff"), json={"file_name": "content.bin"}
+        )
+        data = resp.get_json()
+        url = data.get("url")
+
+        upload_data = rand.randbytes(4000)
+        new_data = rand.randbytes(4000)
+
+        # upload file to share
+        resp = client.post(
+            url + "/content",
+            headers=auth("jeff"),
+            data={
+                "upload": FileStorage(stream=BytesIO(upload_data), filename="upload")
+            },
+            content_type="multipart/form-data",
+        )
+
+        # modify metadata
+        resp = client.patch(
+            url,
+            headers=auth("jeff"),
+            json={"file_name": "new_bin.bin"},
+        )
+        assert resp.status_code == 200
+
+        # modify file contents
+        resp = client.put(
+            url + "/content",
+            headers=auth("jeff"),
+            data={
+                "upload": FileStorage(stream=BytesIO(new_data), filename="upload")
+            },
+        )
+        assert resp.status_code == 200
+
+        # read file
+        resp = client.get(
+            url + "/content",
+            headers=auth("jeff"),
+        )
+        assert resp.data == new_data
+        assert "filename=new_bin.bin" in resp.headers["Content-Disposition"].split("; ")
+
+
     def test_invalid(self, client, users, auth, rand):
         """Test invalid requests."""
 
