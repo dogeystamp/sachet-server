@@ -9,9 +9,7 @@ from sachet.server import storage, db
 files_blueprint = Blueprint("files_blueprint", __name__)
 
 
-class FilesAPI(ModelAPI):
-    """Files metadata API."""
-
+class FilesMetadataAPI(ModelAPI):
     @auth_required(required_permissions=(Permissions.READ,))
     def get(self, share_id, auth_user=None):
         share = Share.query.filter_by(share_id=share_id).first()
@@ -35,12 +33,12 @@ class FilesAPI(ModelAPI):
 
 files_blueprint.add_url_rule(
     "/files/<share_id>",
-    view_func=FilesAPI.as_view("files_api"),
+    view_func=FilesMetadataAPI.as_view("files_metadata_api"),
     methods=["PUT", "PATCH", "GET", "DELETE"],
 )
 
 
-class FileCreationAPI(ModelAPI):
+class FilesAPI(ModelAPI):
     @auth_required(required_permissions=(Permissions.CREATE,))
     def post(self, auth_user=None):
         data = request.get_json()
@@ -50,7 +48,7 @@ class FileCreationAPI(ModelAPI):
 
 files_blueprint.add_url_rule(
     "/files",
-    view_func=FileCreationAPI.as_view("files_creation_api"),
+    view_func=FilesAPI.as_view("files_api"),
     methods=["POST"],
 )
 
