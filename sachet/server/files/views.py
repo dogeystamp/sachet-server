@@ -3,7 +3,7 @@ import io
 from flask import Blueprint, request, jsonify, send_file
 from flask.views import MethodView
 from sachet.server.models import Share, Permissions
-from sachet.server.views_common import ModelAPI, auth_required
+from sachet.server.views_common import ModelAPI, ModelListAPI, auth_required
 from sachet.server import storage, db
 
 files_blueprint = Blueprint("files_blueprint", __name__)
@@ -38,7 +38,7 @@ files_blueprint.add_url_rule(
 )
 
 
-class FilesAPI(ModelAPI):
+class FilesAPI(ModelListAPI):
     @auth_required(required_permissions=(Permissions.CREATE,))
     def post(self, auth_user=None):
         data = request.get_json()

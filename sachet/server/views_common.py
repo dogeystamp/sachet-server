@@ -94,7 +94,7 @@ def patch(orig, diff):
 
 
 class ModelAPI(MethodView):
-    """Generic REST API for interacting with models."""
+    """Generic REST API for the representation of a model instance."""
 
     def get(self, model):
         if not model:
@@ -189,6 +189,10 @@ class ModelAPI(MethodView):
         db.session.commit()
 
         return jsonify({"status": "success"})
+
+
+class ModelListAPI(MethodView):
+    """Generic API for representing all instances of a given model."""
 
     def post(self, ModelClass, data={}):
         """Create new instance of a class.
