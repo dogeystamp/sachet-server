@@ -213,6 +213,8 @@ class Share(db.Model):
         Time the share was created (not initialized.)
     file_name : str
         File name to download as.
+    url : str
+        URL linking to this object.
 
     Methods
     -------

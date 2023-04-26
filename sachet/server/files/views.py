@@ -45,11 +45,15 @@ class FilesAPI(ModelListAPI):
         data["owner_name"] = auth_user.username
         return super().post(Share, data)
 
+    @auth_required(required_permissions=(Permissions.LIST,))
+    def get(self, auth_user=None):
+        return super().get(Share)
+
 
 files_blueprint.add_url_rule(
     "/files",
     view_func=FilesAPI.as_view("files_api"),
-    methods=["POST"],
+    methods=["POST", "GET"],
 )
 
 

@@ -57,7 +57,7 @@ def flask_app_bare():
 
 @pytest.fixture
 def users(client):
-    """Creates all the test users.
+    """Create all the test users.
 
     Returns a dictionary with all the info for each user.
     """
@@ -69,6 +69,7 @@ def users(client):
                 Permissions.READ,
                 Permissions.DELETE,
                 Permissions.MODIFY,
+                Permissions.LIST,
             ),
         ),
         dave=dict(

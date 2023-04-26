@@ -219,3 +219,40 @@ class ModelListAPI(MethodView):
         db.session.commit()
 
         return jsonify({"status": "success", "url": model.url}), 201
+
+    def get(self, ModelClass):
+        """List a given range of instances.
+
+        Parameters
+        ----------
+        ModelClass
+            Model class to query.
+
+        JSON Parameters
+        ---------------
+        per_page : int
+            Amount of entries to return in one query.
+        page : int
+            Incrementing this reads the next `per_page` entries.
+
+        Returns
+        -------
+        data : list of dict
+            All requested entries.
+        prev : int or None
+            Number of previous page (if this is not the first).
+        next : int or None
+            Number of next page (if this is not the last).
+        """
+        json_data = request.get_json()
+        per_page = int(json_data.get("per_page", 15))
+        page = int(json_data.get("page", 1))
+
+        page_data = ModelClass.query.paginate(page=page, per_page=per_page)
+        data = [model.get_schema().dump(model) for model in page_data]
+
+        return jsonify(dict(
+            data=data,
+            prev=page_data.prev_num,
+            next=page_data.next_num,
+        ))
