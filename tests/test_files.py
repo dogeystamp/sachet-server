@@ -91,9 +91,7 @@ class TestSuite:
         resp = client.put(
             url + "/content",
             headers=auth("jeff"),
-            data={
-                "upload": FileStorage(stream=BytesIO(new_data), filename="upload")
-            },
+            data={"upload": FileStorage(stream=BytesIO(new_data), filename="upload")},
         )
         assert resp.status_code == 200
 
@@ -104,7 +102,6 @@ class TestSuite:
         )
         assert resp.data == new_data
         assert "filename=new_bin.bin" in resp.headers["Content-Disposition"].split("; ")
-
 
     def test_invalid(self, client, users, auth, rand):
         """Test invalid requests."""

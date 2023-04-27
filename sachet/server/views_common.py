@@ -251,8 +251,10 @@ class ModelListAPI(MethodView):
         page_data = ModelClass.query.paginate(page=page, per_page=per_page)
         data = [model.get_schema().dump(model) for model in page_data]
 
-        return jsonify(dict(
-            data=data,
-            prev=page_data.prev_num,
-            next=page_data.next_num,
-        ))
+        return jsonify(
+            dict(
+                data=data,
+                prev=page_data.prev_num,
+                next=page_data.next_num,
+            )
+        )

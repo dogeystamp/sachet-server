@@ -30,10 +30,7 @@ class FilesMetadataAPI(ModelAPI):
         try:
             uuid.UUID(share_id)
         except ValueError:
-            return jsonify(dict(
-                status="fail",
-                message=f"Invalid ID: '{share_id}'."
-            ))
+            return jsonify(dict(status="fail", message=f"Invalid ID: '{share_id}'."))
         share = Share.query.filter_by(share_id=share_id).first()
         return super().delete(share)
 

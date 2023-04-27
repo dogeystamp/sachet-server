@@ -45,10 +45,7 @@ def test_files(client, users, auth):
         per_page = 9
         while page is not None:
             resp = client.get(
-                "/files", headers=auth("jeff"), json=dict(
-                    page=page,
-                    per_page=per_page
-                )
+                "/files", headers=auth("jeff"), json=dict(page=page, per_page=per_page)
             )
             assert resp.status_code == 200
 
