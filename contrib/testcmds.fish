@@ -22,16 +22,17 @@ function sachet_set_perms -d "setup permissions"
 end
 
 function sachet_upload -d "uploads a file"
-	set URL (http --session=sachet-user post $BASENAME/files file_name="$argv" | jq -r .url)
+	set FNAME (basename $argv)
+	set URL (http --session=sachet-user post $BASENAME/files file_name=$FNAME | jq -r .url)
 	http --session=sachet-user -f post $BASENAME/$URL/content upload@$argv
 end
 
 function sachet_upload_meme -d "uploads a random meme"
 	set MEME ~/med/memes/woof/(ls ~/med/memes/woof | shuf | head -n 1)
-	upload $MEME
+	sachet_upload $MEME
 end
 
-function sachet_list_files -d "lists files on a given page"
+function sachet_list -d "lists files on a given page"
 	argparse 'P/per-page=!_validate_int' -- $argv
 	if not set -q _flag_per_page
 		set _flag_per_page 5
@@ -43,6 +44,8 @@ function sachet_download -d "downloads a given file id"
 	http --session=sachet-user -f -d get $BASENAME/files/$argv/content
 end
 
-function sachet_delete -d "delete a given file id"
-	http --session=sachet-user delete $BASENAME/files/$argv
+function sachet_delete -d "delete given file ids"
+	for file in $argv
+		http --session=sachet-user delete $BASENAME/files/$file
+	end
 end
