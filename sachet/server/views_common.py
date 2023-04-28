@@ -1,6 +1,6 @@
 from flask import request, jsonify
 from flask.views import MethodView
-from sachet.server.models import Permissions, User, BlacklistToken
+from sachet.server.models import Permissions, User, BlacklistToken, ServerSettings
 from sachet.server import db
 from functools import wraps
 from marshmallow import ValidationError
@@ -8,20 +8,21 @@ from bitmask import Bitmask
 import jwt
 
 
-def auth_required(func=None, *, required_permissions=()):
-    """Decorator to require authentication.
+# https://stackoverflow.com/questions/3888158/making-decorators-with-optional-arguments
+def auth_required(func=None, *, required_permissions=(), allow_anonymous=False):
+    """Require specific authentication.
 
-    Passes an argument 'user' to the function, with a User object corresponding
+    Passes an argument `user` to the function, with a User object corresponding
     to the authenticated session.
 
     Parameters
     ----------
-
-    required_permissions : tuple of Permissions
+    required_permissions : tuple of Permissions, optional
         Permissions required to access this endpoint.
+    allow_anonymous : bool, optional
+        Allow anonymous authentication. This means the `user` parameter might be None.
     """
 
-    # see https://stackoverflow.com/questions/3888158/making-decorators-with-optional-arguments
     def _decorate(f):
         @wraps(f)
         def decorator(*args, **kwargs):
@@ -38,7 +39,28 @@ def auth_required(func=None, *, required_permissions=()):
                     return jsonify(resp), 401
 
             if not token:
-                return jsonify({"status": "fail", "message": "Missing auth token"}), 401
+                if allow_anonymous:
+                    server_settings = ServerSettings.query.first()
+                    if (
+                        Bitmask(AllFlags=Permissions, *required_permissions)
+                        not in server_settings.default_permissions
+                    ):
+                        return (
+                            jsonify(
+                                {
+                                    "status": "fail",
+                                    "message": "Missing permissions to access this page.",
+                                }
+                            ),
+                            403,
+                        )
+                    kwargs["auth_user"] = None
+                    return f(*args, **kwargs)
+                else:
+                    return (
+                        jsonify({"status": "fail", "message": "Missing auth token"}),
+                        401,
+                    )
 
             try:
                 data, user = User.read_token(token)

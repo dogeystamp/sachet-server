@@ -236,9 +236,10 @@ class Share(db.Model):
 
     file_name = db.Column(db.String, nullable=False)
 
-    def __init__(self, owner_name, file_name=None):
+    def __init__(self, owner_name=None, file_name=None):
         self.owner = User.query.filter_by(username=owner_name).first()
-        self.owner_name = self.owner.username
+        if self.owner:
+            self.owner_name = self.owner.username
         self.share_id = uuid.uuid4()
         self.url = url_for("files_blueprint.files_metadata_api", share_id=self.share_id)
         self.create_date = datetime.datetime.now()
