@@ -1,6 +1,6 @@
 from flask import request, jsonify
 from flask.views import MethodView
-from sachet.server.models import Permissions, User, BlacklistToken, ServerSettings
+from sachet.server.models import Permissions, User, BlacklistToken, get_settings
 from sachet.server import db
 from functools import wraps
 from marshmallow import ValidationError
@@ -40,7 +40,7 @@ def auth_required(func=None, *, required_permissions=(), allow_anonymous=False):
 
             if not token:
                 if allow_anonymous:
-                    server_settings = ServerSettings.query.first()
+                    server_settings = get_settings()
                     if (
                         Bitmask(AllFlags=Permissions, *required_permissions)
                         not in server_settings.default_permissions
@@ -52,7 +52,7 @@ def auth_required(func=None, *, required_permissions=(), allow_anonymous=False):
                                     "message": "Missing permissions to access this page.",
                                 }
                             ),
-                            403,
+                            401,
                         )
                     kwargs["auth_user"] = None
                     return f(*args, **kwargs)
@@ -101,7 +101,6 @@ def auth_required(func=None, *, required_permissions=(), allow_anonymous=False):
 
 def patch(orig, diff):
     """Patch the dictionary orig recursively with the dictionary diff."""
-
     # if we get to a leaf node, just replace it
     if not isinstance(orig, dict) or not isinstance(diff, dict):
         return diff
@@ -267,8 +266,14 @@ class ModelListAPI(MethodView):
             Number of next page (if this is not the last).
         """
         json_data = request.get_json()
-        per_page = int(json_data.get("per_page", 15))
-        page = int(json_data.get("page", 1))
+        try:
+            per_page = int(json_data.get("per_page", 15))
+            page = int(json_data.get("page", 1))
+        except ValueError as e:
+            return jsonify(dict(
+                status="fail",
+                message=str(e),
+            )), 400
 
         page_data = ModelClass.query.paginate(page=page, per_page=per_page)
         data = [model.get_schema().dump(model) for model in page_data]

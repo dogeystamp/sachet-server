@@ -75,3 +75,12 @@ def test_files(client, users, auth):
 
     end_page = paginate(forwards=True)
     paginate(forwards=False, page=end_page)
+
+
+def test_invalid(client, auth):
+    """Test invalid requests to pagination."""
+
+    resp = client.get(
+        "/files", headers=auth("jeff"), json=dict(page="one", per_page="two")
+    )
+    assert resp.status_code == 400

@@ -192,6 +192,17 @@ class ServerSettings(db.Model):
         return Schema()
 
 
+def get_settings():
+    """Return server settings, and create them if they don't exist."""
+    rows = ServerSettings.query.all()
+    if len(rows) == 0:
+        settings = ServerSettings()
+        db.session.add(settings)
+        db.session.commit()
+        return settings
+    return rows[-1]
+
+
 class Share(db.Model):
     """Share for a single file.
 

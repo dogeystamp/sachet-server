@@ -70,6 +70,12 @@ def test_files(client, auth, rand):
         url,
         json={"file_name": "new_bin.bin"},
     )
+    # set read perm for anon users
+    resp = client.patch(
+        "/admin/settings",
+        headers=auth("administrator"),
+        json={"default_permissions": ["READ"]},
+    )
     assert resp.status_code == 200
     resp = client.get(
         url + "/content",
@@ -110,6 +116,13 @@ def test_files(client, auth, rand):
     )
     assert resp.status_code == 200
 
+    # set delete perm for anon users
+    resp = client.patch(
+        "/admin/settings",
+        headers=auth("administrator"),
+        json={"default_permissions": ["READ"]},
+    )
+    assert resp.status_code == 200
     # file shouldn't exist anymore
     resp = client.get(
         url + "/content",
