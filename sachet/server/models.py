@@ -220,6 +220,8 @@ class Share(db.Model):
     initialized : bool
         Since only the metadata is uploaded first, this switches to True when
         the real data is uploaded.
+    locked : bool
+        Locks modification and deletion of this share.
     create_date : DateTime
         Time the share was created (not initialized.)
     file_name : str
@@ -242,12 +244,13 @@ class Share(db.Model):
     owner = db.relationship("User", backref=db.backref("owner"))
 
     initialized = db.Column(db.Boolean, nullable=False, default=False)
+    locked = db.Column(db.Boolean, nullable=False, default=False)
 
     create_date = db.Column(db.DateTime, nullable=False)
 
     file_name = db.Column(db.String, nullable=False)
 
-    def __init__(self, owner_name=None, file_name=None):
+    def __init__(self, owner_name=None, file_name=None, locked=False):
         self.owner = User.query.filter_by(username=owner_name).first()
         if self.owner:
             self.owner_name = self.owner.username
@@ -259,6 +262,8 @@ class Share(db.Model):
         else:
             self.file_name = str(self.share_id)
 
+        self.locked = locked
+
     def get_schema(self):
         class Schema(ma.SQLAlchemySchema):
             class Meta:
@@ -268,6 +273,7 @@ class Share(db.Model):
             owner_name = ma.auto_field()
             file_name = ma.auto_field()
             initialized = ma.auto_field(dump_only=True)
+            locked = ma.auto_field(dump_only=True)
 
         return Schema()
 

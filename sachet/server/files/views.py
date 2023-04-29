@@ -18,11 +18,15 @@ class FilesMetadataAPI(ModelAPI):
     @auth_required(required_permissions=(Permissions.MODIFY,), allow_anonymous=True)
     def patch(self, share_id, auth_user=None):
         share = Share.query.filter_by(share_id=share_id).first()
+        if share.locked:
+            return jsonify({"status": "fail", "message": "This share is locked."}), 423
         return super().patch(share)
 
     @auth_required(required_permissions=(Permissions.MODIFY,), allow_anonymous=True)
     def put(self, share_id, auth_user=None):
         share = Share.query.filter_by(share_id=share_id).first()
+        if share.locked:
+            return jsonify({"status": "fail", "message": "This share is locked."}), 423
         return super().put(share)
 
     @auth_required(required_permissions=(Permissions.DELETE,), allow_anonymous=True)
@@ -32,6 +36,8 @@ class FilesMetadataAPI(ModelAPI):
         except ValueError:
             return jsonify(dict(status="fail", message=f"Invalid ID: '{share_id}'."))
         share = Share.query.filter_by(share_id=share_id).first()
+        if share.locked:
+            return jsonify({"status": "fail", "message": "This share is locked."}), 423
         return super().delete(share)
 
 
@@ -117,6 +123,11 @@ class FileContentAPI(ModelAPI):
                 jsonify({"status": "fail", "message": "This share does not exist."})
             ), 404
 
+        if share.locked:
+            return (
+                jsonify({"status": "fail", "message": "This share is locked."})
+            ), 423
+
         if auth_user != share.owner:
             return (
                 jsonify(
@@ -181,4 +192,48 @@ files_blueprint.add_url_rule(
     "/files/<share_id>/content",
     view_func=FileContentAPI.as_view("files_content_api"),
     methods=["POST", "PUT", "GET"],
+)
+
+
+class FileLockAPI(ModelAPI):
+    @auth_required(required_permissions=(Permissions.LOCK,), allow_anonymous=True)
+    def post(self, share_id, auth_user=None):
+        share = Share.query.filter_by(share_id=uuid.UUID(share_id)).first()
+        if not share:
+            return (
+                jsonify({"status": "fail", "message": "This share does not exist."})
+            ), 404
+
+        share.locked = True
+        db.session.commit()
+
+        return jsonify({"status": "success", "message": "Share has been locked."})
+
+
+files_blueprint.add_url_rule(
+    "/files/<share_id>/lock",
+    view_func=FileLockAPI.as_view("files_lock_api"),
+    methods=["POST"],
+)
+
+
+class FileUnlockAPI(ModelAPI):
+    @auth_required(required_permissions=(Permissions.LOCK,), allow_anonymous=True)
+    def post(self, share_id, auth_user=None):
+        share = Share.query.filter_by(share_id=uuid.UUID(share_id)).first()
+        if not share:
+            return (
+                jsonify({"status": "fail", "message": "This share does not exist."})
+            ), 404
+
+        share.locked = False
+        db.session.commit()
+
+        return jsonify({"status": "success", "message": "Share has been unlocked."})
+
+
+files_blueprint.add_url_rule(
+    "/files/<share_id>/unlock",
+    view_func=FileUnlockAPI.as_view("files_unlock_api"),
+    methods=["POST"],
 )

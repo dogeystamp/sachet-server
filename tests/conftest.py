@@ -70,6 +70,7 @@ def users(client):
                 Permissions.DELETE,
                 Permissions.MODIFY,
                 Permissions.LIST,
+                Permissions.LOCK,
             ),
         ),
         dave=dict(
@@ -105,6 +106,16 @@ def users(client):
             password="password",
             permissions=Bitmask(
                 Permissions.CREATE,
+                Permissions.DELETE,
+                Permissions.ADMIN,
+                Permissions.READ,
+            ),
+        ),
+        no_lock_user=dict(
+            password="password",
+            permissions=Bitmask(
+                Permissions.CREATE,
+                Permissions.MODIFY,
                 Permissions.DELETE,
                 Permissions.ADMIN,
                 Permissions.READ,
