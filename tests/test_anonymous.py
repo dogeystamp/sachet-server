@@ -128,3 +128,83 @@ def test_files(client, auth, rand):
         url + "/content",
     )
     assert resp.status_code == 404
+
+
+def test_files_invalid(client, auth, rand):
+    # set create perm for anon users
+    resp = client.patch(
+        "/admin/settings",
+        headers=auth("administrator"),
+        json={"default_permissions": ["CREATE"]},
+    )
+    assert resp.status_code == 200
+
+    # create an uninitialized share
+    resp = client.post("/files", json={"file_name": "content.bin"})
+    assert resp.status_code == 201
+    data = resp.get_json()
+    uninit_url = data.get("url")
+
+    # upload a share
+    resp = client.post("/files", json={"file_name": "content.bin"})
+    assert resp.status_code == 201
+    data = resp.get_json()
+    url = data.get("url")
+    upload_data = rand.randbytes(4000)
+    resp = client.post(
+        url + "/content",
+        data={"upload": FileStorage(stream=BytesIO(upload_data), filename="upload")},
+        content_type="multipart/form-data",
+    )
+    assert resp.status_code == 201
+
+    # disable all permissions
+    resp = client.patch(
+        "/admin/settings",
+        headers=auth("administrator"),
+        json={"default_permissions": []},
+    )
+    assert resp.status_code == 200
+
+    # test initializing a share without perms
+    resp = client.post(
+        uninit_url + "/content",
+        data={"upload": FileStorage(stream=BytesIO(upload_data), filename="upload")},
+        content_type="multipart/form-data",
+    )
+    assert resp.status_code == 401
+    # test reading a share without perms
+    resp = client.get(url + "/content")
+    # test modifying an uninitialized share without perms
+    resp = client.put(
+        uninit_url + "/content",
+        data={"upload": FileStorage(stream=BytesIO(upload_data), filename="upload")},
+        content_type="multipart/form-data",
+    )
+    assert resp.status_code == 401
+    assert resp.status_code == 401
+    # test modifying a share without perms
+    resp = client.put(
+        url + "/content",
+        data={"upload": FileStorage(stream=BytesIO(upload_data), filename="upload")},
+        content_type="multipart/form-data",
+    )
+    assert resp.status_code == 401
+
+    # test deleting a share without perms
+    resp = client.delete(url)
+    assert resp.status_code == 401
+    # test modifying share metadata without perms
+    resp = client.patch(url)
+    resp = client.put(url)
+    assert resp.status_code == 401
+    # test reading share metadata without perms
+    resp = client.get(url)
+    assert resp.status_code == 401
+
+    # test listing shares without perms
+    resp = client.get("/files")
+    assert resp.status_code == 401
+    # test creating share without perms
+    resp = client.post("/files")
+    assert resp.status_code == 401
