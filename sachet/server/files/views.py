@@ -117,6 +117,17 @@ class FileContentAPI(ModelAPI):
                 jsonify({"status": "fail", "message": "This share does not exist."})
             ), 404
 
+        if auth_user != share.owner:
+            return (
+                jsonify(
+                    {
+                        "status": "fail",
+                        "message": "Share must be initialized by its owner.",
+                    }
+                ),
+                403,
+            )
+
         if not share.initialized:
             return (
                 jsonify(

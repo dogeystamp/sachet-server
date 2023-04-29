@@ -182,6 +182,18 @@ class TestSuite:
         )
         assert resp.status_code == 201
 
+        # test other user being unable to modify this share
+        resp = client.put(
+            url + "/content",
+            headers=auth("dave"),
+            data={
+                "upload": FileStorage(stream=BytesIO(upload_data), filename="upload")
+            },
+            content_type="multipart/form-data",
+        )
+        assert resp.status_code == 403
+
+
         # test not allowing re-upload
         resp = client.post(
             url + "/content",
