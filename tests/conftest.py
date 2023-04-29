@@ -75,7 +75,10 @@ def users(client):
         dave=dict(
             password="1234",
             permissions=Bitmask(
-                Permissions.CREATE, Permissions.READ, Permissions.DELETE
+                Permissions.CREATE,
+                Permissions.READ,
+                Permissions.DELETE,
+                Permissions.MODIFY,
             ),
         ),
         # admins don't have the other permissions by default,

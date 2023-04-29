@@ -122,7 +122,7 @@ class FileContentAPI(ModelAPI):
                 jsonify(
                     {
                         "status": "fail",
-                        "message": "Share must be initialized by its owner.",
+                        "message": "Share must be modified by its owner.",
                     }
                 ),
                 403,
