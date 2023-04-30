@@ -1,6 +1,6 @@
 import pytest
 from sachet.server.commands import create_db, drop_db, create_user, delete_user
-from sachet.server import app, db
+from sachet.server import db
 from sqlalchemy import inspect
 
 from sachet.server.models import User

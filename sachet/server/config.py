@@ -1,4 +1,5 @@
 from os import getenv, path
+from flask import current_app
 import yaml
 
 sqlalchemy_base = "sqlite:///sachet"
@@ -51,9 +52,7 @@ def overlay_config(base, config_file=None):
     if config["SECRET_KEY"] == "" or config["SECRET_KEY"] is None:
         raise ValueError("Please set secret_key within the configuration.")
 
-    from sachet.server import app
-
-    app.config.from_object(base)
+    current_app.config.from_object(base)
 
     for k, v in config.items():
-        app.config[k] = v
+        current_app.config[k] = v

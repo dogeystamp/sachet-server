@@ -9,13 +9,14 @@ from .config import DevelopmentConfig, ProductionConfig, TestingConfig, overlay_
 app = Flask(__name__)
 CORS(app)
 
-if os.getenv("RUN_ENV") == "test":
-    overlay_config(TestingConfig, "./config-testing.yml")
-elif app.config["DEBUG"]:
-    overlay_config(DevelopmentConfig)
-    app.logger.warning("Running in DEVELOPMENT MODE; do NOT use this in production!")
-else:
-    overlay_config(ProductionConfig)
+with app.app_context():
+    if os.getenv("RUN_ENV") == "test":
+        overlay_config(TestingConfig, "./config-testing.yml")
+    elif app.config["DEBUG"]:
+        overlay_config(DevelopmentConfig)
+        app.logger.warning("Running in DEVELOPMENT MODE; do NOT use this in production!")
+    else:
+        overlay_config(ProductionConfig)
 
 bcrypt = Bcrypt(app)
 db = SQLAlchemy(app)
@@ -27,10 +28,13 @@ storage = None
 
 from sachet.storage import FileSystem
 
-if _storage_method == "filesystem":
-    storage = FileSystem()
-else:
-    raise ValueError(f"{_storage_method} is not a valid storage method.")
+
+with app.app_context():
+    db.create_all()
+    if _storage_method == "filesystem":
+        storage = FileSystem()
+    else:
+        raise ValueError(f"{_storage_method} is not a valid storage method.")
 
 import sachet.server.commands
 
@@ -45,6 +49,3 @@ app.register_blueprint(admin_blueprint)
 from sachet.server.files.views import files_blueprint
 
 app.register_blueprint(files_blueprint)
-
-with app.app_context():
-    db.create_all()

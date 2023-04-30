@@ -1,10 +1,10 @@
-from sachet.server import app, db, ma, bcrypt, storage
+from sachet.server import db, ma, bcrypt, storage
 import datetime
 import jwt
 from enum import IntFlag
 from bitmask import Bitmask
 from marshmallow import fields, ValidationError
-from flask import request, jsonify, url_for
+from flask import request, jsonify, url_for, current_app
 from sqlalchemy_utils import UUIDType
 import uuid
 
@@ -87,7 +87,7 @@ class User(db.Model):
         self.permissions = permissions
 
         self.password = bcrypt.generate_password_hash(
-            password, app.config.get("BCRYPT_LOG_ROUNDS")
+            password, current_app.config.get("BCRYPT_LOG_ROUNDS")
         ).decode()
         self.username = username
         self.register_date = datetime.datetime.now()
@@ -100,7 +100,7 @@ class User(db.Model):
             "sub": self.username,
             "jti": jti,
         }
-        return jwt.encode(payload, app.config.get("SECRET_KEY"), algorithm="HS256")
+        return jwt.encode(payload, current_app.config.get("SECRET_KEY"), algorithm="HS256")
 
     def read_token(token):
         """Read a JWT and validate it.
@@ -111,7 +111,7 @@ class User(db.Model):
 
         data = jwt.decode(
             token,
-            app.config["SECRET_KEY"],
+            current_app.config["SECRET_KEY"],
             algorithms=["HS256"],
         )
 
@@ -153,7 +153,7 @@ class BlacklistToken(db.Model):
 
         data = jwt.decode(
             token,
-            app.config["SECRET_KEY"],
+            current_app.config["SECRET_KEY"],
             algorithms=["HS256"],
         )
         self.expires = datetime.datetime.fromtimestamp(data["exp"])

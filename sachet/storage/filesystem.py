@@ -1,4 +1,5 @@
 from sachet.storage import Storage
+from flask import current_app
 from pathlib import Path
 from werkzeug.utils import secure_filename
 import json
@@ -6,21 +7,18 @@ import json
 
 class FileSystem(Storage):
     def __init__(self):
-        # prevent circular import when inspecting this file outside of Flask
-        from sachet.server import app
-
-        config_path = Path(app.config["SACHET_FILE_DIR"])
+        config_path = Path(current_app.config["SACHET_FILE_DIR"])
         if config_path.is_absolute():
             self._directory = config_path
         else:
-            self._directory = Path(app.instance_path) / config_path
+            self._directory = Path(current_app.instance_path) / config_path
 
         self._files_directory = self._directory / Path("files")
 
         self._files_directory.mkdir(mode=0o700, exist_ok=True, parents=True)
 
         if not self._directory.is_dir():
-            raise OSError(f"'{app.config['SACHET_FILE_DIR']}' is not a directory.")
+            raise OSError(f"'{current_app.config['SACHET_FILE_DIR']}' is not a directory.")
 
     def _get_path(self, name):
         name = secure_filename(name)
