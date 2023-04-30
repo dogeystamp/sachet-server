@@ -1,9 +1,10 @@
 import click
 from sachet.server import app, db
-from sachet.server.models import User, Permissions
+from sachet.server.models import User, Share, Permissions
 from sachet.server.users import manage
 from flask.cli import AppGroup
 from bitmask import Bitmask
+import datetime
 
 
 user_cli = AppGroup("user")
@@ -44,3 +45,22 @@ def delete_user(username):
 
 
 app.cli.add_command(user_cli)
+
+
+@user_cli.command("cleanup")
+def cleanup():
+    """Clean up stale database entries.
+
+    Shares that are not initialized are deleted if they are older than 25 minutes.
+    """
+    res = Share.query.filter(
+        Share.create_date < (datetime.datetime.now() - datetime.timedelta(minutes=25)),
+        # do not use `Share.initialized` or `is False` here
+        # sqlalchemy doesn't like it
+        Share.initialized == False,
+    )
+    res.delete()
+    db.session.commit()
+
+
+app.cli.add_command(cleanup)

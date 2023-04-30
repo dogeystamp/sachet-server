@@ -1,8 +1,9 @@
 import pytest
-from sachet.server.commands import create_user, delete_user
+from sachet.server.commands import create_user, delete_user, cleanup
 from sqlalchemy import inspect
-
-from sachet.server.models import User
+from sachet.server import db
+import datetime
+from sachet.server.models import User, Share
 
 
 def test_user(client, cli):
@@ -24,3 +25,31 @@ def test_user(client, cli):
     # delete non-existent user
     result = cli.invoke(delete_user, ["--yes", "jeff"])
     assert isinstance(result.exception, KeyError)
+
+
+def test_cleanup(client, cli):
+    """Test the CLI's ability to destroy uninitialized shares past expiry."""
+    # create shares
+    # this one will be destroyed
+    share = Share()
+    db.session.add(share)
+    share.create_date = datetime.datetime.now() - datetime.timedelta(minutes=30)
+    destroyed = share.share_id
+    # this one won't
+    share = Share()
+    db.session.add(share)
+    safe = share.share_id
+    # this one neither
+    share = Share()
+    share.initialized = True
+    share.create_date = datetime.datetime.now() - datetime.timedelta(minutes=30)
+    db.session.add(share)
+    safe2 = share.share_id
+
+    db.session.commit()
+
+    result = cli.invoke(cleanup)
+    assert result.exit_code == 0
+    assert Share.query.filter_by(share_id=destroyed).first() is None
+    assert Share.query.filter_by(share_id=safe).first() is not None
+    assert Share.query.filter_by(share_id=safe2).first() is not None

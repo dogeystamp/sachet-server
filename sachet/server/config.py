@@ -14,12 +14,14 @@ class BaseConfig:
 
 
 class TestingConfig(BaseConfig):
+    SERVER_NAME = "localhost.test"
     SQLALCHEMY_DATABASE_URI = sqlalchemy_base + "_test" + ".db"
     BCRYPT_LOG_ROUNDS = 4
     SACHET_FILE_DIR = "storage_test"
 
 
 class DevelopmentConfig(BaseConfig):
+    SERVER_NAME = "localhost.dev"
     SQLALCHEMY_DATABASE_URI = sqlalchemy_base + "_dev" + ".db"
     BCRYPT_LOG_ROUNDS = 4
     SACHET_FILE_DIR = "storage_dev"
