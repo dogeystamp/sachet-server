@@ -4,6 +4,7 @@ from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
 from flask_bcrypt import Bcrypt
+from flask_migrate import Migrate
 from .config import DevelopmentConfig, ProductionConfig, TestingConfig, overlay_config
 
 app = Flask(__name__)
@@ -22,6 +23,7 @@ with app.app_context():
 
 bcrypt = Bcrypt(app)
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 ma = Marshmallow()
 
 _storage_method = app.config["SACHET_STORAGE"]

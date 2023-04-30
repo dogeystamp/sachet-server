@@ -6,30 +6,6 @@ from flask.cli import AppGroup
 from bitmask import Bitmask
 
 
-db_cli = AppGroup("db")
-
-
-@db_cli.command("create")
-def create_db():
-    """Create all db tables."""
-    db.create_all()
-
-
-@db_cli.command("drop")
-@click.option(
-    "--yes",
-    is_flag=True,
-    expose_value=False,
-    prompt="Are you sure you want to drop all tables?",
-)
-def drop_db():
-    """Drop all db tables."""
-    db.drop_all()
-
-
-app.cli.add_command(db_cli)
-
-
 user_cli = AppGroup("user")
 
 
