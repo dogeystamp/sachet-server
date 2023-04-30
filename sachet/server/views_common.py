@@ -270,10 +270,15 @@ class ModelListAPI(MethodView):
             per_page = int(json_data.get("per_page", 15))
             page = int(json_data.get("page", 1))
         except ValueError as e:
-            return jsonify(dict(
-                status="fail",
-                message=str(e),
-            )), 400
+            return (
+                jsonify(
+                    dict(
+                        status="fail",
+                        message=str(e),
+                    )
+                ),
+                400,
+            )
 
         page_data = ModelClass.query.paginate(page=page, per_page=per_page)
         data = [model.get_schema().dump(model) for model in page_data]

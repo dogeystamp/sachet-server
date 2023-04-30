@@ -18,7 +18,9 @@ class FileSystem(Storage):
         self._files_directory.mkdir(mode=0o700, exist_ok=True, parents=True)
 
         if not self._directory.is_dir():
-            raise OSError(f"'{current_app.config['SACHET_FILE_DIR']}' is not a directory.")
+            raise OSError(
+                f"'{current_app.config['SACHET_FILE_DIR']}' is not a directory."
+            )
 
     def _get_path(self, name):
         name = secure_filename(name)

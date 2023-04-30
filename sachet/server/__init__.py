@@ -14,7 +14,9 @@ with app.app_context():
         overlay_config(TestingConfig, "./config-testing.yml")
     elif app.config["DEBUG"]:
         overlay_config(DevelopmentConfig)
-        app.logger.warning("Running in DEVELOPMENT MODE; do NOT use this in production!")
+        app.logger.warning(
+            "Running in DEVELOPMENT MODE; do NOT use this in production!"
+        )
     else:
         overlay_config(ProductionConfig)
 

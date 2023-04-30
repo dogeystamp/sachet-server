@@ -253,7 +253,6 @@ class TestSuite:
         )
         assert resp.status_code == 423
 
-
         # unlock share
         resp = client.post(
             url + "/unlock",

@@ -100,7 +100,9 @@ class User(db.Model):
             "sub": self.username,
             "jti": jti,
         }
-        return jwt.encode(payload, current_app.config.get("SECRET_KEY"), algorithm="HS256")
+        return jwt.encode(
+            payload, current_app.config.get("SECRET_KEY"), algorithm="HS256"
+        )
 
     def read_token(token):
         """Read a JWT and validate it.
