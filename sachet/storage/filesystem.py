@@ -43,7 +43,7 @@ class FileSystem(Storage):
             self._path = self._storage._get_path(name)
             self._path.touch()
 
-        def delete(self, name):
+        def delete(self):
             self._path.unlink()
 
         def open(self, mode="r"):

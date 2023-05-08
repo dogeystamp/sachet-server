@@ -1,8 +1,12 @@
 import pytest
+import uuid
+from math import ceil
 from sachet.server.users import manage
 from click.testing import CliRunner
 from sachet.server import app, db, storage
 from sachet.server.models import Permissions, User
+from werkzeug.datastructures import FileStorage
+from io import BytesIO
 from bitmask import Bitmask
 from pathlib import Path
 import random
@@ -200,3 +204,59 @@ def auth(tokens):
         return ret
 
     return auth_headers
+
+
+@pytest.fixture
+def upload(client):
+    """Perform chunked upload of some data.
+
+    Parameters
+    ----------
+    url : str
+        URL to upload to.
+    data : BytesIO
+        Stream of data to upload.
+        You can use BytesIO(data) to convert raw bytes to a stream.
+    headers : dict, optional
+        Headers to upload with.
+    chunk_size : int, optional
+        Size of chunks in bytes.
+    method : function
+        Method like client.post or client.put to use.
+    """
+    def upload(url, data, headers={}, chunk_size=int(2e6), method=client.post):
+        data_size = len(data.getbuffer())
+
+        buf = data.getbuffer()
+
+        upload_uuid = uuid.uuid4()
+
+        total_chunks = int(ceil(data_size / chunk_size))
+
+        resp = None
+
+        for chunk_idx in range(total_chunks):
+            start = chunk_size * chunk_idx
+            end = min(chunk_size * (chunk_idx + 1), data_size)
+
+            resp = method(
+                url,
+                headers=headers,
+                data={
+                    "upload": FileStorage(
+                        stream=BytesIO(buf[start:end]), filename="upload"
+                    ),
+                    "dzuuid": str(upload_uuid),
+                    "dzchunkindex": chunk_idx,
+                    "dztotalchunks": total_chunks,
+                },
+                content_type="multipart/form-data",
+            )
+            if not resp.status_code == 200 or resp.status_code == 201:
+                break
+
+        return resp
+
+
+
+    return upload

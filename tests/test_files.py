@@ -10,7 +10,7 @@ import uuid
 # this might be redundant because test_storage tests the backends already
 @pytest.mark.parametrize("client", [{"SACHET_STORAGE": "filesystem"}], indirect=True)
 class TestSuite:
-    def test_sharing(self, client, users, auth, rand):
+    def test_sharing(self, client, users, auth, rand, upload):
         # create share
         resp = client.post(
             "/files", headers=auth("jeff"), json={"file_name": "content.bin"}
@@ -25,14 +25,11 @@ class TestSuite:
 
         upload_data = rand.randbytes(4000)
 
-        # upload file to share
-        resp = client.post(
+        resp = upload(
             url + "/content",
+            BytesIO(upload_data),
             headers=auth("jeff"),
-            data={
-                "upload": FileStorage(stream=BytesIO(upload_data), filename="upload")
-            },
-            content_type="multipart/form-data",
+            chunk_size=1230,
         )
         assert resp.status_code == 201
 
@@ -58,7 +55,7 @@ class TestSuite:
         )
         assert resp.status_code == 404
 
-    def test_modification(self, client, users, auth, rand):
+    def test_modification(self, client, users, auth, rand, upload):
         # create share
         resp = client.post(
             "/files", headers=auth("jeff"), json={"file_name": "content.bin"}
@@ -70,14 +67,12 @@ class TestSuite:
         new_data = rand.randbytes(4000)
 
         # upload file to share
-        resp = client.post(
+        resp = upload(
             url + "/content",
+            BytesIO(upload_data),
             headers=auth("jeff"),
-            data={
-                "upload": FileStorage(stream=BytesIO(upload_data), filename="upload")
-            },
-            content_type="multipart/form-data",
         )
+        assert resp.status_code == 201
 
         # modify metadata
         resp = client.patch(
@@ -88,12 +83,13 @@ class TestSuite:
         assert resp.status_code == 200
 
         # modify file contents
-        resp = client.put(
+        resp = upload(
             url + "/content",
+            BytesIO(new_data),
             headers=auth("jeff"),
-            data={"upload": FileStorage(stream=BytesIO(new_data), filename="upload")},
+            method=client.put,
         )
-        assert resp.status_code == 200
+        assert resp.status_code == 201
 
         # read file
         resp = client.get(
@@ -103,7 +99,7 @@ class TestSuite:
         assert resp.data == new_data
         assert "filename=new_bin.bin" in resp.headers["Content-Disposition"].split("; ")
 
-    def test_invalid(self, client, users, auth, rand):
+    def test_invalid(self, client, users, auth, rand, upload):
         """Test invalid requests."""
 
         upload_data = rand.randbytes(4000)
@@ -141,66 +137,51 @@ class TestSuite:
         url = data.get("url")
 
         # test invalid methods
-        resp = client.put(
+        resp = upload(
             url + "/content",
+            BytesIO(upload_data),
             headers=auth("jeff"),
-            data={
-                "upload": FileStorage(stream=BytesIO(upload_data), filename="upload")
-            },
-            content_type="multipart/form-data",
+            method=client.put,
         )
         assert resp.status_code == 423
-        resp = client.patch(
+        resp = upload(
             url + "/content",
+            BytesIO(upload_data),
             headers=auth("jeff"),
-            data={
-                "upload": FileStorage(stream=BytesIO(upload_data), filename="upload")
-            },
-            content_type="multipart/form-data",
+            method=client.patch,
         )
         assert resp.status_code == 405
 
         # test other user being unable to upload to this share
-        resp = client.post(
+        resp = upload(
             url + "/content",
+            BytesIO(upload_data),
             headers=auth("dave"),
-            data={
-                "upload": FileStorage(stream=BytesIO(upload_data), filename="upload")
-            },
-            content_type="multipart/form-data",
         )
         assert resp.status_code == 403
 
         # upload file to share (properly)
-        resp = client.post(
+        resp = upload(
             url + "/content",
+            BytesIO(upload_data),
             headers=auth("jeff"),
-            data={
-                "upload": FileStorage(stream=BytesIO(upload_data), filename="upload")
-            },
-            content_type="multipart/form-data",
         )
         assert resp.status_code == 201
 
         # test other user being unable to modify this share
-        resp = client.put(
+        resp = upload(
             url + "/content",
+            BytesIO(upload_data),
             headers=auth("dave"),
-            data={
-                "upload": FileStorage(stream=BytesIO(upload_data), filename="upload")
-            },
-            content_type="multipart/form-data",
+            method=client.put,
         )
         assert resp.status_code == 403
 
         # test not allowing re-upload
-        resp = client.post(
+        resp = upload(
             url + "/content",
+            BytesIO(upload_data),
             headers=auth("jeff"),
-            data={
-                "upload": FileStorage(stream=BytesIO(upload_data), filename="upload")
-            },
-            content_type="multipart/form-data",
         )
         assert resp.status_code == 423
 
@@ -210,7 +191,7 @@ class TestSuite:
         resp = client.get(url + "/content", headers=auth("no_read_user"))
         assert resp.status_code == 403
 
-    def test_locking(self, client, users, auth, rand):
+    def test_locking(self, client, users, auth, rand, upload):
         # upload share
         resp = client.post(
             "/files", headers=auth("jeff"), json={"file_name": "content.bin"}
@@ -218,13 +199,10 @@ class TestSuite:
         data = resp.get_json()
         url = data.get("url")
         upload_data = rand.randbytes(4000)
-        resp = client.post(
+        resp = upload(
             url + "/content",
+            BytesIO(upload_data),
             headers=auth("jeff"),
-            data={
-                "upload": FileStorage(stream=BytesIO(upload_data), filename="upload")
-            },
-            content_type="multipart/form-data",
         )
         assert resp.status_code == 201
 
@@ -236,13 +214,11 @@ class TestSuite:
         assert resp.status_code == 200
 
         # attempt to modify share
-        resp = client.put(
+        resp = upload(
             url + "/content",
+            BytesIO(upload_data),
             headers=auth("jeff"),
-            data={
-                "upload": FileStorage(stream=BytesIO(upload_data), filename="upload")
-            },
-            content_type="multipart/form-data",
+            method=client.put,
         )
         assert resp.status_code == 423
 
@@ -261,15 +237,13 @@ class TestSuite:
         assert resp.status_code == 200
 
         # attempt to modify share
-        resp = client.put(
+        resp = upload(
             url + "/content",
+            BytesIO(upload_data),
             headers=auth("jeff"),
-            data={
-                "upload": FileStorage(stream=BytesIO(upload_data), filename="upload")
-            },
-            content_type="multipart/form-data",
+            method=client.put,
         )
-        assert resp.status_code == 200
+        assert resp.status_code == 201
 
         # attempt to delete share
         resp = client.delete(

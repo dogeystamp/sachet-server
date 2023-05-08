@@ -281,3 +281,129 @@ class Share(db.Model):
 
     def get_handle(self):
         return storage.get_file(str(self.share_id))
+
+
+class Upload(db.Model):
+    """Upload instance for a given file.
+
+    Parameters
+    ----------
+    upload_id : str
+        ID associated to this upload.
+    total_chunks: int
+        Total amount of chunks in this upload.
+    share_id : uuid.UUID
+        Assigns this upload to the given share id.
+
+    Attributes
+    ----------
+    upload_id : str
+        ID associated to this upload.
+    total_chunks : int
+        Total amount of chunks in this upload.
+    recv_chunks : int
+        Amount of chunks received in this upload.
+    completed : bool
+        Whether the file has been fully uploaded.
+    share : Share
+        The share this upload is for.
+    chunks : list of Chunk
+        Chunks composing this upload.
+    create_date : DateTime
+        Time this upload was started.
+    """
+
+    __tablename__ = "uploads"
+
+    upload_id = db.Column(db.String, primary_key=True)
+
+    share_id = db.Column(UUIDType(), db.ForeignKey("shares.share_id"))
+    share = db.relationship("Share", backref=db.backref("upload"))
+    create_date = db.Column(db.DateTime, nullable=False)
+    total_chunks = db.Column(db.Integer, nullable=False)
+    recv_chunks = db.Column(db.Integer, nullable=False, default=0)
+    completed = db.Column(db.Boolean, nullable=False, default=False)
+
+    chunks = db.relationship(
+        "Chunk", backref=db.backref("upload"), order_by="Chunk.chunk_id"
+    )
+
+    def __init__(self, upload_id, total_chunks, share_id):
+        self.share = Share.query.filter_by(share_id=share_id).first()
+        if self.share is None:
+            raise KeyError(f"Share '{self.share_id}' could not be found.")
+
+        self.upload_id = upload_id
+        self.total_chunks = total_chunks
+        self.create_date = datetime.datetime.now()
+
+    def complete(self):
+        """Merge chunks, save the file, then clean up."""
+        tmp_file = storage.get_file(f"{self.share.share_id}_{self.upload_id}")
+        with tmp_file.open(mode="ab") as tmp_f:
+            for chunk in self.chunks:
+                chunk_file = storage.get_file(chunk.filename)
+                with chunk_file.open(mode="rb") as chunk_f:
+                    data = chunk_f.read()
+                tmp_f.write(data)
+
+        # replace the old file
+        old_file = self.share.get_handle()
+        old_file.delete()
+        tmp_file.rename(str(self.share.share_id))
+
+        self.completed = True
+
+
+class Chunk(db.Model):
+    """Single chunk within an upload.
+
+    Parameters
+    ----------
+    index : int
+        Index of this chunk within an upload.
+    upload_id : str
+        ID of the upload this chunk is associated to.
+    total_chunks : int
+        Total amount of chunks within this upload.
+    share : Share
+        Assigns this chunk to the given share.
+    data : bytes
+        Raw chunk data.
+
+    Attributes
+    ----------
+    chunk_id : int
+        ID unique for all chunks (not just in a single upload.)
+    create_date : DateTime
+        Time this chunk was received.
+    index : int
+        Index of this chunk within an upload.
+    upload : Upload
+        Upload this chunk is associated to.
+    filename : str
+        Filename the data is stored in.
+    """
+
+    __tablename__ = "chunks"
+
+    chunk_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    create_date = db.Column(db.DateTime, nullable=False)
+    index = db.Column(db.Integer, nullable=False)
+    upload_id = db.Column(db.String, db.ForeignKey("uploads.upload_id"))
+    filename = db.Column(db.String, nullable=False)
+
+    def __init__(self, index, upload_id, total_chunks, share, data):
+        self.upload = Upload.query.filter_by(upload_id=upload_id).first()
+        if self.upload is None:
+            self.upload = Upload(upload_id, total_chunks, share.share_id)
+            self.upload.recv_chunks = 0
+            db.session.add(self.upload)
+
+        self.create_date = datetime.datetime.now()
+        self.index = index
+        self.filename = f"{share.share_id}_{self.upload_id}_{self.index}"
+
+        file = storage.get_file(self.filename)
+        with file.open(mode="wb") as f:
+            f.write(data)

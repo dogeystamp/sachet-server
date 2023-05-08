@@ -6,7 +6,7 @@ import uuid
 """Test anonymous authentication to endpoints."""
 
 
-def test_files(client, auth, rand):
+def test_files(client, auth, rand, upload):
     # set create perm for anon users
     resp = client.patch(
         "/admin/settings",
@@ -28,10 +28,9 @@ def test_files(client, auth, rand):
     upload_data = rand.randbytes(4000)
 
     # upload file to share
-    resp = client.post(
+    resp = upload(
         url + "/content",
-        data={"upload": FileStorage(stream=BytesIO(upload_data), filename="upload")},
-        content_type="multipart/form-data",
+        BytesIO(upload_data),
     )
     assert resp.status_code == 201
 
@@ -60,12 +59,12 @@ def test_files(client, auth, rand):
 
     # modify share
     upload_data = rand.randbytes(4000)
-    resp = client.put(
+    resp = upload(
         url + "/content",
-        data={"upload": FileStorage(stream=BytesIO(upload_data), filename="upload")},
-        content_type="multipart/form-data",
+        BytesIO(upload_data),
+        method=client.put,
     )
-    assert resp.status_code == 200
+    assert resp.status_code == 201
     resp = client.patch(
         url,
         json={"file_name": "new_bin.bin"},
@@ -130,7 +129,7 @@ def test_files(client, auth, rand):
     assert resp.status_code == 404
 
 
-def test_files_invalid(client, auth, rand):
+def test_files_invalid(client, auth, rand, upload):
     # set create perm for anon users
     resp = client.patch(
         "/admin/settings",
@@ -151,10 +150,9 @@ def test_files_invalid(client, auth, rand):
     data = resp.get_json()
     url = data.get("url")
     upload_data = rand.randbytes(4000)
-    resp = client.post(
+    resp = upload(
         url + "/content",
-        data={"upload": FileStorage(stream=BytesIO(upload_data), filename="upload")},
-        content_type="multipart/form-data",
+        BytesIO(upload_data)
     )
     assert resp.status_code == 201
 
@@ -167,27 +165,25 @@ def test_files_invalid(client, auth, rand):
     assert resp.status_code == 200
 
     # test initializing a share without perms
-    resp = client.post(
-        uninit_url + "/content",
-        data={"upload": FileStorage(stream=BytesIO(upload_data), filename="upload")},
-        content_type="multipart/form-data",
+    resp = upload(
+        url + "/content",
+        BytesIO(upload_data)
     )
     assert resp.status_code == 401
     # test reading a share without perms
     resp = client.get(url + "/content")
     # test modifying an uninitialized share without perms
-    resp = client.put(
+    resp = upload(
         uninit_url + "/content",
-        data={"upload": FileStorage(stream=BytesIO(upload_data), filename="upload")},
-        content_type="multipart/form-data",
+        BytesIO(upload_data),
+        method=client.put
     )
     assert resp.status_code == 401
-    assert resp.status_code == 401
     # test modifying a share without perms
-    resp = client.put(
+    resp = upload(
         url + "/content",
-        data={"upload": FileStorage(stream=BytesIO(upload_data), filename="upload")},
-        content_type="multipart/form-data",
+        BytesIO(upload_data),
+        method=client.put
     )
     assert resp.status_code == 401
 

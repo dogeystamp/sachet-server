@@ -2,7 +2,7 @@ import uuid
 import io
 from flask import Blueprint, request, jsonify, send_file
 from flask.views import MethodView
-from sachet.server.models import Share, Permissions
+from sachet.server.models import Share, Permissions, Upload, Chunk
 from sachet.server.views_common import ModelAPI, ModelListAPI, auth_required
 from sachet.server import storage, db
 
@@ -68,7 +68,60 @@ files_blueprint.add_url_rule(
 )
 
 
-class FileContentAPI(ModelAPI):
+class FileContentAPI(MethodView):
+    def recv_upload(self, share):
+        """Receive chunked uploads.
+
+        share : Share
+            Share we are uploading to.
+        """
+        chunk_file = request.files.get("upload")
+        if not chunk_file:
+            return (
+                jsonify(dict(status="fail", message="Missing chunk data in request.")),
+                400,
+            )
+        chunk_data = chunk_file.read()
+
+        try:
+            dz_uuid = request.form["dzuuid"]
+            dz_chunk_index = int(request.form["dzchunkindex"])
+            dz_total_chunks = int(request.form["dztotalchunks"])
+        except KeyError as err:
+            return (
+                jsonify(
+                    dict(
+                        status="fail", message=f"Missing data for chunking; {err}"
+                    )
+                ),
+                400,
+            )
+        except ValueError as err:
+            return (
+                jsonify(
+                    dict(
+                        status="fail", message=f"{err}"
+                    )
+                ),
+                400,
+            )
+
+        chunk = Chunk(dz_chunk_index, dz_uuid, dz_total_chunks, share, chunk_data)
+        db.session.add(chunk)
+        db.session.commit()
+        upload = chunk.upload
+
+        upload.recv_chunks = upload.recv_chunks + 1
+        if upload.recv_chunks >= upload.total_chunks:
+            upload.complete()
+
+        if upload.completed:
+            share.initialized = True
+            db.session.commit()
+            return jsonify(dict(status="success", message="Upload completed.")), 201
+        else:
+            return jsonify(dict(status="success", message="Chunk uploaded.")), 200
+
     @auth_required(required_permissions=(Permissions.CREATE,), allow_anonymous=True)
     def post(self, share_id, auth_user=None):
         share = Share.query.filter_by(share_id=uuid.UUID(share_id)).first()
@@ -100,20 +153,7 @@ class FileContentAPI(ModelAPI):
                 423,
             )
 
-        upload = request.files["upload"]
-        data = upload.read()
-        file = share.get_handle()
-        with file.open(mode="wb") as f:
-            f.write(data)
-
-        share.initialized = True
-
-        db.session.commit()
-
-        return (
-            jsonify({"status": "success", "message": "Share has been initialized."}),
-            201,
-        )
+        return self.recv_upload(share)
 
     @auth_required(required_permissions=(Permissions.MODIFY,), allow_anonymous=True)
     def put(self, share_id, auth_user=None):
@@ -150,17 +190,7 @@ class FileContentAPI(ModelAPI):
                 423,
             )
 
-        upload = request.files["upload"]
-        data = upload.read()
-        file = share.get_handle()
-
-        with file.open(mode="wb") as f:
-            f.write(data)
-
-        return (
-            jsonify({"status": "success", "message": "Share has been modified."}),
-            200,
-        )
+        return self.recv_upload(share)
 
     @auth_required(required_permissions=(Permissions.READ,), allow_anonymous=True)
     def get(self, share_id, auth_user=None):
