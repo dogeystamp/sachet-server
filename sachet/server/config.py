@@ -21,7 +21,6 @@ class TestingConfig(BaseConfig):
 
 
 class DevelopmentConfig(BaseConfig):
-    SERVER_NAME = "localhost.dev"
     SQLALCHEMY_DATABASE_URI = sqlalchemy_base + "_dev" + ".db"
     BCRYPT_LOG_ROUNDS = 4
     SACHET_FILE_DIR = "storage_dev"
