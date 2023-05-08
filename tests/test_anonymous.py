@@ -150,10 +150,7 @@ def test_files_invalid(client, auth, rand, upload):
     data = resp.get_json()
     url = data.get("url")
     upload_data = rand.randbytes(4000)
-    resp = upload(
-        url + "/content",
-        BytesIO(upload_data)
-    )
+    resp = upload(url + "/content", BytesIO(upload_data))
     assert resp.status_code == 201
 
     # disable all permissions
@@ -165,26 +162,15 @@ def test_files_invalid(client, auth, rand, upload):
     assert resp.status_code == 200
 
     # test initializing a share without perms
-    resp = upload(
-        url + "/content",
-        BytesIO(upload_data)
-    )
+    resp = upload(url + "/content", BytesIO(upload_data))
     assert resp.status_code == 401
     # test reading a share without perms
     resp = client.get(url + "/content")
     # test modifying an uninitialized share without perms
-    resp = upload(
-        uninit_url + "/content",
-        BytesIO(upload_data),
-        method=client.put
-    )
+    resp = upload(uninit_url + "/content", BytesIO(upload_data), method=client.put)
     assert resp.status_code == 401
     # test modifying a share without perms
-    resp = upload(
-        url + "/content",
-        BytesIO(upload_data),
-        method=client.put
-    )
+    resp = upload(url + "/content", BytesIO(upload_data), method=client.put)
     assert resp.status_code == 401
 
     # test deleting a share without perms

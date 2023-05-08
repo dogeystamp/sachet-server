@@ -224,6 +224,7 @@ def upload(client):
     method : function
         Method like client.post or client.put to use.
     """
+
     def upload(url, data, headers={}, chunk_size=int(2e6), method=client.post):
         data_size = len(data.getbuffer())
 
@@ -256,7 +257,5 @@ def upload(client):
                 break
 
         return resp
-
-
 
     return upload

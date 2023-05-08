@@ -90,19 +90,13 @@ class FileContentAPI(MethodView):
         except KeyError as err:
             return (
                 jsonify(
-                    dict(
-                        status="fail", message=f"Missing data for chunking; {err}"
-                    )
+                    dict(status="fail", message=f"Missing data for chunking; {err}")
                 ),
                 400,
             )
         except ValueError as err:
             return (
-                jsonify(
-                    dict(
-                        status="fail", message=f"{err}"
-                    )
-                ),
+                jsonify(dict(status="fail", message=f"{err}")),
                 400,
             )
 
