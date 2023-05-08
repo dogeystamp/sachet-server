@@ -6,6 +6,7 @@ from bitmask import Bitmask
 from marshmallow import fields, ValidationError
 from flask import request, jsonify, url_for, current_app
 from sqlalchemy_utils import UUIDType
+from sqlalchemy import event
 import uuid
 
 
@@ -282,6 +283,13 @@ class Share(db.Model):
     def get_handle(self):
         return storage.get_file(str(self.share_id))
 
+    @classmethod
+    def __declare_last__(cls):
+        @event.listens_for(cls, "before_delete")
+        def share_before_delete(mapper, connection, share):
+            file = share.get_handle()
+            file.delete()
+
 
 class Upload(db.Model):
     """Upload instance for a given file.
@@ -325,7 +333,8 @@ class Upload(db.Model):
     completed = db.Column(db.Boolean, nullable=False, default=False)
 
     chunks = db.relationship(
-        "Chunk", backref=db.backref("upload"), order_by="Chunk.chunk_id"
+        "Chunk", backref=db.backref("upload"), order_by="Chunk.chunk_id",
+        cascade="all, delete"
     )
 
     def __init__(self, upload_id, total_chunks, share_id):
@@ -408,3 +417,10 @@ class Chunk(db.Model):
         file = storage.get_file(self.filename)
         with file.open(mode="wb") as f:
             f.write(data)
+
+    @classmethod
+    def __declare_last__(cls):
+        @event.listens_for(cls, "before_delete")
+        def chunk_before_delete(mapper, connection, chunk):
+            file = storage.get_file(chunk.filename)
+            file.delete()

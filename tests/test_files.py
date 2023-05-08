@@ -1,6 +1,8 @@
 import pytest
+from os.path import basename
 from io import BytesIO
 from werkzeug.datastructures import FileStorage
+from sachet.server import storage
 import uuid
 
 """Test file share endpoints."""
@@ -54,6 +56,9 @@ class TestSuite:
             headers=auth("jeff"),
         )
         assert resp.status_code == 404
+
+        for f in storage.list_files():
+            assert basename(url) not in f.name
 
     def test_modification(self, client, users, auth, rand, upload):
         # create share

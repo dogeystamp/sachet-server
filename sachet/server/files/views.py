@@ -117,6 +117,7 @@ class FileContentAPI(MethodView):
 
         if upload.completed:
             share.initialized = True
+            db.session.delete(upload)
             db.session.commit()
             return jsonify(dict(status="success", message="Upload completed.")), 201
         else:
