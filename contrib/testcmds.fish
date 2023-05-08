@@ -4,8 +4,6 @@
 set -gx BASENAME localhost:5000
 
 function sachet_init_db -d "initialize db"
-	flask --debug --app sachet.server db drop --yes
-	flask --debug --app sachet.server db create
 	flask --debug --app sachet.server user create --username admin --admin yes --password password123
 	flask --debug --app sachet.server user create --username user --admin no --password password123
 end
@@ -31,13 +29,18 @@ end
 function sachet_upload -d "uploads a file"
 	argparse 's/session=?' -- $argv
 	set FNAME (basename $argv)
-	set URL (http --session=$_flag_session post $BASENAME/files file_name=$FNAME | jq -r .url)
-	http --session=$_flag_session -f post $BASENAME/$URL/content upload@$argv
+	set URL (http --session=$_flag_session post $BASENAME/files file_name=$FNAME | tee /dev/tty | jq -r .url)
+	http --session=$_flag_session -f post $BASENAME/$URL/content \
+		upload@$argv \
+		dzuuid=(cat /dev/urandom | xxd -ps | head -c 32) \
+		dzchunkindex=0 \
+		dztotalchunks=1
 end
 
 function sachet_upload_meme -d "uploads a random meme"
+	argparse 's/session=?' -- $argv
 	set MEME ~/med/memes/woof/(ls ~/med/memes/woof | shuf | head -n 1)
-	sachet_upload $MEME
+	sachet_upload -s$_flag_session $MEME
 end
 
 function sachet_list -d "lists files on a given page"
