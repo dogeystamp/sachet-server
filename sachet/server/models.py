@@ -397,6 +397,7 @@ class Chunk(db.Model):
         self.upload = Upload.query.filter_by(upload_id=upload_id).first()
         if self.upload is None:
             self.upload = Upload(upload_id, total_chunks, share.share_id)
+            self.upload_id = upload_id
             self.upload.recv_chunks = 0
             db.session.add(self.upload)
 
