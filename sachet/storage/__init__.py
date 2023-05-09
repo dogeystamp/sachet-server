@@ -8,14 +8,13 @@ class Storage:
     """
 
     def list_files(self):
-        """Lists all files.
+        """List all files.
 
         Returns
         -------
         list of File
 
         """
-
         pass
 
     def get_file(self, name):
@@ -29,7 +28,6 @@ class Storage:
             Filename to access.
 
         """
-
         pass
 
     class File:
@@ -41,6 +39,8 @@ class Storage:
         ----------
         name : str
             Filename
+        size : int
+            Size in bytes of the file.
         """
 
         def open(self, mode="r"):
@@ -57,12 +57,10 @@ class Storage:
                     Stream to access the file (just like the builtin `open()`.)
 
             """
-
             pass
 
         def delete(self):
             """Delete file."""
-
             pass
 
         def rename(self, new_name):
@@ -73,7 +71,6 @@ class Storage:
             new_name : str
                 New name for the file.
             """
-
             pass
 
 

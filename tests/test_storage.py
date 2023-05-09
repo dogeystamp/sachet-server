@@ -10,15 +10,20 @@ from uuid import UUID
 @pytest.mark.parametrize("client", [{"SACHET_STORAGE": "filesystem"}], indirect=True)
 class TestSuite:
     def test_creation(self, client, rand):
-        """Test the process of creating, writing, then reading files, and also listing files."""
+        """Test file pipeline.
 
-        files = [
-            dict(
-                name=str(UUID(bytes=rand.randbytes(16))),
-                data=rand.randbytes(4000),
+        Creating, writing, reading, listing, reading size of files."""
+
+        files = []
+        for i in range(25):
+            data_size = rand.randint(3000, 5000)
+            files.append(
+                dict(
+                    name=str(UUID(bytes=rand.randbytes(16))),
+                    data_size=data_size,
+                    data=rand.randbytes(data_size),
+                )
             )
-            for i in range(25)
-        ]
 
         for file in files:
             handle = storage.get_file(file["name"])
@@ -30,6 +35,7 @@ class TestSuite:
             with handle.open(mode="rb") as f:
                 saved_data = f.read()
                 assert saved_data == file["data"]
+                assert handle.size == file["data_size"]
 
         assert sorted([f.name for f in storage.list_files()]) == sorted(
             [f["name"] for f in files]

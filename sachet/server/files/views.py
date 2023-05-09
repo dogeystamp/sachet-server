@@ -1,6 +1,6 @@
 import uuid
 import io
-from flask import Blueprint, request, jsonify, send_file
+from flask import Blueprint, request, jsonify, send_file, make_response
 from flask.views import MethodView
 from sachet.server.models import Share, Permissions, Upload, Chunk
 from sachet.server.views_common import ModelAPI, ModelListAPI, auth_required
@@ -207,10 +207,50 @@ class FileContentAPI(MethodView):
             )
 
         file = share.get_handle()
-        with file.open(mode="rb") as f:
-            data = f.read()
 
-        return send_file(io.BytesIO(data), download_name=share.file_name)
+        range_header = request.headers.get("Range")
+        if not range_header:
+            resp = make_response(
+                send_file(file.open(mode="rb"), download_name=share.file_name)
+            )
+            resp.headers["Accept-Ranges"] = "bytes"
+            return resp
+
+        # handle partial file request
+        vals = range_header.strip().split("=")
+        if len(vals) != 2:
+            return (
+                jsonify(
+                    dict(
+                        status="fail", message=f"Invalid range header '{range_header}'."
+                    )
+                ),
+                400,
+            )
+
+        try:
+            start, end = vals[1].split("-")
+            start = int(start)
+            end = int(end) or file.size - 1
+        except ValueError as err:
+            return (
+                jsonify(dict(status="fail", message=str(err))),
+                400,
+            )
+
+        content_length = end - start + 1
+
+        with file.open(mode="rb") as f:
+            f.seek(start)
+            resp = make_response(
+                send_file(
+                    io.BytesIO(f.read(content_length)), download_name=share.file_name
+                )
+            )
+            resp.headers["Content-Range"] = f"bytes {start}-{end}/{file.size}"
+            resp.headers["Accept-Ranges"] = "bytes"
+            resp.headers["Content-Length"] = content_length
+            return resp, 206
 
 
 files_blueprint.add_url_rule(

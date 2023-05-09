@@ -55,3 +55,7 @@ class FileSystem(Storage):
                 raise OSError(f"Path {path} already exists.")
 
             self._path.rename(new_path)
+
+        @property
+        def size(self):
+            return self._path.stat().st_size
