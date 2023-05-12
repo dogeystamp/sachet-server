@@ -268,3 +268,58 @@ class TestSuite:
             headers=auth("no_lock_user"),
         )
         assert resp.status_code == 403
+
+    def test_partial(self, client, users, auth, rand, upload):
+        # create share
+        resp = client.post(
+            "/files", headers=auth("jeff"), json={"file_name": "content.bin"}
+        )
+        assert resp.status_code == 201
+
+        data = resp.get_json()
+        url = data.get("url")
+
+        upload_data = b"1234567890" * 400
+
+        resp = upload(
+            url + "/content",
+            BytesIO(upload_data),
+            headers=auth("jeff"),
+            chunk_size=1230,
+        )
+        assert resp.status_code == 201
+
+        # test the following ranges
+        ranges = [
+            [0, 1],
+            [1, 1],
+            [2, 300],
+            [300, 30],
+            [3, 4],
+            [30, 3999],
+            [4000, 4000],
+            [3999, 39999],
+            [40000, 0],
+            [48000, 9],
+            [-1, 0],
+            [-2, 3],
+            [0, 4000],
+            [0, ""],
+        ]
+
+        for r in ranges:
+            resp = client.get(
+                url + "/content",
+                headers=auth("jeff", data={"Range": f"bytes={r[0]}-{r[1]}"}),
+            )
+            if r[1] == "":
+                r[1] = len(upload_data)
+            # apparently if you specify an endpoint past the end
+            # it just truncates the response to the end
+            if r[0] < 0 or r[0] >= 4000:
+                assert resp.status_code == 416
+            elif r[0] > r[1]:
+                assert resp.status_code == 416
+            else:
+                assert resp.status_code == 206
+                assert resp.data == upload_data[r[0] : r[1] + 1]
