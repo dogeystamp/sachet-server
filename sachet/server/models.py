@@ -334,9 +334,9 @@ class Upload(db.Model):
 
     chunks = db.relationship(
         "Chunk",
-        backref=db.backref("upload"),
+        backref="upload",
+        passive_deletes=True,
         order_by="Chunk.chunk_id",
-        cascade="all, delete",
     )
 
     def __init__(self, upload_id, total_chunks, share_id):
@@ -401,7 +401,9 @@ class Chunk(db.Model):
     chunk_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     create_date = db.Column(db.DateTime, nullable=False)
     index = db.Column(db.Integer, nullable=False)
-    upload_id = db.Column(db.String, db.ForeignKey("uploads.upload_id"))
+    upload_id = db.Column(
+        db.String, db.ForeignKey("uploads.upload_id", ondelete="CASCADE")
+    )
     filename = db.Column(db.String, nullable=False)
 
     def __init__(self, index, upload_id, total_chunks, share, data):
@@ -421,9 +423,11 @@ class Chunk(db.Model):
         with file.open(mode="wb") as f:
             f.write(data)
 
-    @classmethod
-    def __declare_last__(cls):
-        @event.listens_for(cls, "before_delete")
-        def chunk_before_delete(mapper, connection, chunk):
+
+@event.listens_for(db.session, "persistent_to_deleted")
+def chunk_delete_listener(session, instance):
+    # kinda hacky but i have no idea how to trigger event listener on cascaded delete
+    if isinstance(instance, Upload):
+        for chunk in instance.chunks:
             file = storage.get_file(chunk.filename)
             file.delete()

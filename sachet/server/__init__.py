@@ -6,6 +6,9 @@ from flask_marshmallow import Marshmallow
 from flask_bcrypt import Bcrypt
 from flask_migrate import Migrate
 from .config import DevelopmentConfig, ProductionConfig, TestingConfig, overlay_config
+from sqlalchemy import event
+from sqlalchemy.engine import Engine
+from sqlite3 import Connection as SQLite3Connection
 
 app = Flask(__name__)
 CORS(app)
@@ -31,6 +34,15 @@ _storage_method = app.config["SACHET_STORAGE"]
 storage = None
 
 from sachet.storage import FileSystem
+
+
+# https://stackoverflow.com/questions/57726047/
+@event.listens_for(Engine, "connect")
+def _set_sqlite_pragma(dbapi_connection, connection_record):
+    if isinstance(dbapi_connection, SQLite3Connection):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON;")
+        cursor.close()
 
 
 with app.app_context():

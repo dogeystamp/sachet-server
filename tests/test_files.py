@@ -2,6 +2,7 @@ import pytest
 from os.path import basename
 from io import BytesIO
 from werkzeug.datastructures import FileStorage
+from sachet.server.models import Upload, Chunk
 from sachet.server import storage
 import uuid
 
