@@ -1,3 +1,4 @@
+alembic==1.10.4
 attrs==22.2.0
 bcrypt==4.0.1
 bitmask @ git+https://github.com/dogeystamp/bitmask@e3726f069c24f1db6ecb2e3d3143c9c930c83fa5
@@ -9,6 +10,7 @@ Flask==2.2.3
 Flask-Bcrypt==1.0.1
 Flask-Cors==3.0.10
 flask-marshmallow==0.14.0
+Flask-Migrate==4.0.4
 Flask-Script==2.0.6
 Flask-SQLAlchemy==3.0.3
 Flask-Testing==0.8.1
@@ -16,6 +18,7 @@ greenlet==2.0.2
 iniconfig==2.0.0
 itsdangerous==2.1.2
 Jinja2==3.1.2
+Mako==1.2.4
 MarkupSafe==2.1.2
 marshmallow==3.19.0
 marshmallow-sqlalchemy==0.29.0
