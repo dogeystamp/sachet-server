@@ -6,6 +6,16 @@
 Welcome to Sachet's documentation!
 ==================================
 
+.. toctree::
+   :maxdepth: 2
+   :caption: Contents:
+
+   authentication
+   permissions
+   user
+   admin
+   files
+
 Sachet is a small file-sharing server.
 
 development
@@ -57,12 +67,6 @@ To clean up the database (remove stale entries)::
 Otherwise, to upgrade the database after a schema change::
 
     flask --app sachet.server db upgrade
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
-
-
 
 Indices and tables
 ==================
