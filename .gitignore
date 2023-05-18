@@ -5,3 +5,4 @@ __pycache__/
 config.yml
 instance/
 .coverage
+docs/_build
