@@ -84,11 +84,13 @@ def test_put(client, users, auth, validate_info):
 
     new_data = {k: v for k, v in users["jeff"].items()}
     new_data["permissions"] = Bitmask(Permissions.ADMIN)
-    new_data["register_date"] = datetime(2022, 2, 2, 0, 0, 0)
+
+    json_data = user_schema.dump(new_data)
+    json_data.update(dict(password="123"))
 
     resp = client.put(
         "/users/jeff",
-        json=user_schema.dump(new_data),
+        json=json_data,
         headers=auth("administrator"),
     )
     assert resp.status_code == 200

@@ -145,10 +145,12 @@ def validate_info(users):
     ]
 
     def _validate(user, info):
-        info = User.get_schema(User).load(info)
+        schema = User.get_schema(User)
+
+        dumped = schema.dump(users[user])
 
         for k in verify_fields:
-            assert users[user][k] == info[k]
+            assert dumped[k] == info[k]
 
     return _validate
 

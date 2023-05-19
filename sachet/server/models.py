@@ -91,6 +91,7 @@ class User(db.Model):
             password, current_app.config.get("BCRYPT_LOG_ROUNDS")
         ).decode()
         self.username = username
+        self.url = url_for("users_blueprint.user_list_api", username=self.username)
         self.register_date = datetime.datetime.now()
 
     def encode_token(self, jti=None):
@@ -133,7 +134,8 @@ class User(db.Model):
                 model = self
 
             username = ma.auto_field()
-            register_date = ma.auto_field()
+            register_date = ma.auto_field(dump_only=True)
+            password = ma.auto_field(load_only=True, required=False)
             permissions = PermissionField()
 
         return Schema()

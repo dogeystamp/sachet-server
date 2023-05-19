@@ -6,7 +6,7 @@ from sachet.server.models import (
     User,
     BlacklistToken,
 )
-from sachet.server.views_common import ModelAPI, auth_required
+from sachet.server.views_common import ModelAPI, ModelListAPI, auth_required
 from sachet.server import bcrypt, db
 
 users_blueprint = Blueprint("users_blueprint", __name__)
@@ -141,4 +141,22 @@ users_blueprint.add_url_rule(
     "/users/<username>",
     view_func=UserAPI.as_view("user_api"),
     methods=["GET", "PATCH", "PUT"],
+)
+
+
+class UserListAPI(ModelListAPI):
+    @auth_required(required_permissions=(Permissions.ADMIN,))
+    def post(self, auth_user=None):
+        data = request.get_json()
+        return super().post(User, data)
+
+    @auth_required(required_permissions=(Permissions.ADMIN,))
+    def get(self, auth_user=None):
+        return super().get(User)
+
+
+users_blueprint.add_url_rule(
+    "/users",
+    view_func=UserListAPI.as_view("user_list_api"),
+    methods=["GET", "POST"],
 )
