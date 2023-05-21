@@ -163,6 +163,18 @@ To access this endpoint, a user needs the :ref:`create shares<permissions_table>
     The share created here is empty, and only contains metadata.
     See :ref:`files_content_api` for information on uploading content.
 
+Upon success, the server will respond like this:
+
+.. code-block:: json
+
+    {
+      "status": "success",
+      "url": "/files/d9eafb5e-af48-40ec-b6fd-f7ea99e6d990"
+    }
+
+The ``url`` field represents the share you just created.
+It can be used in further requests to upload content to the share.
+
 .. _files_content_api:
 
 Content API
