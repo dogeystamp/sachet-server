@@ -1,14 +1,6 @@
 User API
 ========
 
-The User API allows managing users and their permissions.
-
-Sachet implements the following endpoints for this API::
-
-    GET /users/<username>
-    PATCH /users/<username>
-    PUT /users/<username>
-
 .. _user_schema:
 
 User Schema
@@ -50,8 +42,18 @@ In JSON, a User object has the following properties:
       - Read-only
       - Time the user registered at.
 
-Endpoints
----------
+.. _user_info_api:
+
+User Info API
+-------------
+
+The User Info API allows managing users and their permissions.
+
+Sachet implements the following endpoints for this API::
+
+    GET /users/<username>
+    PATCH /users/<username>
+    PUT /users/<username>
 
 GET
 ^^^
@@ -115,8 +117,10 @@ For example:
 
 Only :ref:`administrators<permissions_table>` can request this method.
 
-User List API
--------------
+.. _user_list_api:
+
+List API
+--------
 
 There is also a User List API::
 
