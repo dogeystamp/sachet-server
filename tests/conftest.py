@@ -125,6 +125,16 @@ def users(client):
                 Permissions.READ,
             ),
         ),
+        no_admin_user=dict(
+            password="password",
+            permissions=Bitmask(
+                Permissions.CREATE,
+                Permissions.MODIFY,
+                Permissions.DELETE,
+                Permissions.LOCK,
+                Permissions.READ,
+            ),
+        ),
         administrator=dict(password="4321", permissions=Bitmask(Permissions.ADMIN)),
     )
 
