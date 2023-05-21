@@ -1,6 +1,25 @@
 Files API
 =========
 
+Overview
+--------
+The file upload process essentially works as follows:
+
+#. ``POST /files`` with the metadata to create a share.
+   This will return an URL with the share you just created.
+   (See :ref:`files_list_api`.)
+#. ``POST /files/<uuid>/content`` (the UUID is in the URL from the previous step) to upload the actual data of the share. (See :ref:`files_content_api`.)
+#. ``GET /files/<uuid>/content`` to read the share.
+
+Share modification is done with ``PUT /files/<uuid>/content``.
+
+Shares can be locked, which means they can't be modified or deleted.
+See :ref:`files_lock_api` for more information.
+
+.. note::
+
+   All data uploads are chunked: see :ref:`files_chunked_upload`.
+
 .. _files_schema:
 
 File Schema
@@ -35,7 +54,7 @@ In JSON, a file share has the following properties::
     * - ``locked``
       - Boolean
       - Read-only
-      - Shows if share is locked.
+      - Shows if share is locked (see :ref:`files_lock_api`.)
     * - ``owner_name``
       - string
       -
@@ -44,6 +63,8 @@ In JSON, a file share has the following properties::
       - string
       - Read-only
       - UUID that uniquely identifies this share.
+
+.. _files_metadata_api:
 
 Metadata API
 ------------
@@ -112,6 +133,38 @@ For example:
 
     The permissions from the schema that are missing here are read-only.
 
+.. _files_list_api:
+
+List API
+--------
+
+The File List API allows listing shares and creating new ones::
+
+    GET /files
+    POST /files
+
+GET
+^^^
+
+``GET /files`` is a :ref:`paginated endpoint<pagination>` that returns a list of shares.
+
+To access this endpoint, a user needs the :ref:`list shares<permissions_table>` permission.
+
+POST
+^^^^
+
+``POST /files`` creates a new share.
+The request body must conform to the :ref:`File schema<files_schema>`.
+
+To access this endpoint, a user needs the :ref:`create shares<permissions_table>` permission.
+
+.. note::
+   
+    The share created here is empty, and only contains metadata.
+    See :ref:`files_content_api` for information on uploading content.
+
+.. _files_content_api:
+
 Content API
 -----------
 
@@ -122,6 +175,40 @@ Sachet implements the following endpoints for this API::
     POST /files/<file_uuid>/content
     PUT /files/<file_uuid>/content
     GET /files/<file_uuid>/content
+
+POST
+^^^^
+
+``POST /files/<file_uuid>/content`` initializes the content of an empty share.
+This endpoint requires the :ref:`create shares<permissions_table>` permission.
+
+.. note::
+
+    You must first create a share before initializing it: see :ref:`files_list_api` for information about creation.
+
+Uploads must be chunked (see :ref:`files_chunked_upload`).
+
+To modify the contents of an existing share, use ``PUT`` instead.
+
+PUT
+^^^^
+
+``PUT /files/<file_uuid>/content`` modifies the content of an existing share.
+This endpoint requires the :ref:`modify shares<permissions_table>` permission.
+
+.. note::
+
+    You must initialize a share's content using ``POST`` before modifying it.
+
+Uploads must be chunked (see :ref:`files_chunked_upload`).
+
+GET
+^^^^
+
+``GET /files/<file_uuid>/content`` reads the contents of a share.
+This endpoint requires the :ref:`read shares<permissions_table>` permission.
+
+This endpoint supports `HTTP Range <https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Range>`_ headers.
 
 .. _files_chunked_upload :
 
@@ -141,7 +228,7 @@ the server will instead respond with ``201 Created``.
 
 Every chunk has the following schema:
 
-.. _files_chunk_schema :
+.. _files_chunk_schema:
 
 .. code-block::
 
@@ -173,3 +260,24 @@ Every chunk has the following schema:
     * - ``upload``
       - Binary data (file)
       - Data contained in this chunk.
+
+.. _files_lock_api:
+
+Lock API
+--------
+
+Files can be locked and unlocked.
+When locked, a share can not be modified or deleted.
+
+.. note::
+
+   When attempting illegal actions on a locked share, the server will respond ``423 Locked``.
+
+The following API is used::
+
+    POST /files/<uuid>/lock
+    POST /files/<uuid>/unlock
+
+A user needs the :ref:`lock permission<permissions_table>` to access this API.
+
+To query whether a file is locked or not, see :ref:`files_metadata_api`.

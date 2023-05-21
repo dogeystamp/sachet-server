@@ -49,7 +49,7 @@ The following is a table of permissions Sachet offers, and what they do:
       - Allows users to delete any share.
     * - Lock shares
       - ``LOCK``
-      - Allows users to lock and unlock shares.
+      - Allows users to lock and unlock shares (see :ref:`files_lock_api`).
     * - List shares
       - ``LIST``
       - Allows users to list all shares from all users.

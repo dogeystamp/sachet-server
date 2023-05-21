@@ -133,5 +133,5 @@ GET
 POST
 ^^^^
 
-``POST /users/`` creates a new user.
+``POST /users`` creates a new user.
 The request body must conform to the :ref:`User schema<user_schema>`.
