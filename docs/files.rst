@@ -138,11 +138,11 @@ Every chunk has the following schema:
 
 .. code-block:: json
 
-{
-    "dztotalchunks": 3,
-    "dzchunkindex": 2,
-    "dzuuid": "unique_id"
-}
+    {
+        "dztotalchunks": 3,
+        "dzchunkindex": 2,
+        "dzuuid": "unique_id"
+    }
 
 ..
     TODO...
