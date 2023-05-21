@@ -132,17 +132,44 @@ To allow for uploading large files reliably, Sachet requires that you upload fil
 Partial uploads do not affect the state of the share;
 a new file exists only once all chunks are uploaded.
 
+Chunks are ordered by their index.
+Once an upload finishes, they are combined in that order to form the new file.
+
+The server will respond with ``200 OK`` when chunks are sent.
+When the final chunk is sent, and the upload is completed,
+the server will instead respond with ``201 Created``.
+
 Every chunk has the following schema:
 
 .. _files_chunk_schema :
 
-.. code-block:: json
+.. code-block::
 
-    {
-        "dztotalchunks": 3,
-        "dzchunkindex": 2,
-        "dzuuid": "unique_id"
-    }
+    dztotalchunks = 3
+    dzchunkindex = 2
+    dzuuid = "unique_id"
+    upload = <binary data>
 
-..
-    TODO...
+.. note::
+
+   This data is sent via a ``multipart/form-data`` request; it's not JSON.
+
+.. list-table::
+    :header-rows: 1
+    :widths: 25 25 50
+
+    * - Property
+      - Type
+      - Description
+    * - ``dztotalchunks``
+      - Integer
+      - Total number of chunks the client will send.
+    * - ``dzchunkindex``
+      - Integer
+      - Number of the chunk being sent.
+    * - ``dzuuid``
+      - String
+      - ID which is the same for all chunks in a single upload.
+    * - ``upload``
+      - Binary data (file)
+      - Data contained in this chunk.
