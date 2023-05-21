@@ -1,3 +1,5 @@
+.. _pagination:
+
 Paginated APIs
 ==============
 
