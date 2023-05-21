@@ -111,9 +111,7 @@ class FileContentAPI(MethodView):
 
         if upload.completed:
             share.initialized = True
-            # really convoluted
-            # but otherwise it doesn't cascade deletes?
-            Upload.query.filter(Upload.upload_id == upload.upload_id).delete()
+            db.session.delete(upload)
             db.session.commit()
             return jsonify(dict(status="success", message="Upload completed.")), 201
         else:
