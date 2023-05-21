@@ -11,6 +11,7 @@ Welcome to Sachet's documentation!
    :caption: Contents:
 
    authentication
+   pagination
    permissions
    user
    admin
