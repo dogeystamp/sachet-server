@@ -109,7 +109,7 @@ users_blueprint.add_url_rule(
 
 
 class UserAPI(ModelAPI):
-    """User information API"""
+    """User information API."""
 
     @auth_required
     def get(self, username, auth_user=None):
@@ -136,11 +136,16 @@ class UserAPI(ModelAPI):
         put_user = User.query.filter_by(username=username).first()
         return super().put(put_user)
 
+    @auth_required(required_permissions=(Permissions.ADMIN,))
+    def delete(self, username, auth_user=None):
+        delete_user = User.query.filter_by(username=username).first()
+        return super().delete(delete_user)
+
 
 users_blueprint.add_url_rule(
     "/users/<username>",
     view_func=UserAPI.as_view("user_api"),
-    methods=["GET", "PATCH", "PUT"],
+    methods=["GET", "PATCH", "PUT", "DELETE"],
 )
 
 

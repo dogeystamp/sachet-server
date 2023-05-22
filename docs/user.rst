@@ -54,6 +54,7 @@ Sachet implements the following endpoints for this API::
     GET /users/<username>
     PATCH /users/<username>
     PUT /users/<username>
+    DELETE /users/<username>
 
 GET
 ^^^
@@ -114,6 +115,13 @@ For example:
         "password": "123",
         "username": "user"
     }
+
+Only :ref:`administrators<permissions_table>` can request this method.
+
+DELETE
+^^^^^^
+
+Requesting ``DELETE /users/<username>`` deletes the specified user.
 
 Only :ref:`administrators<permissions_table>` can request this method.
 
