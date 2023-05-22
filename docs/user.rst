@@ -147,3 +147,15 @@ POST
 
 ``POST /users`` creates a new user.
 The request body must conform to the :ref:`User schema<user_schema>`.
+
+The server will return a ``201 Created`` code with a similar body to this:
+
+.. code-block:: json
+
+    {
+        "status": "success",
+        "url": "/users/user"
+    }
+
+The ``url`` field is the URL to the new user.
+It can be used in further requests to manage the user's information, or delete it.
