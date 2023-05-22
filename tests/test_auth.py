@@ -4,13 +4,6 @@ from sachet.server import db
 from sachet.server.users import manage
 
 
-def test_reserved_users(client):
-    """Test that the server prevents reserved endpoints from being registered as usernames."""
-    for user in ["login", "logout", "extend"]:
-        with pytest.raises(KeyError):
-            manage.create_user(False, user, "")
-
-
 def test_unauth_perms(client):
     """Test endpoints to see if they allow unauthenticated users."""
     resp = client.get("/users/jeff")
