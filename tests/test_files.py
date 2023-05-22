@@ -182,6 +182,18 @@ class TestSuite:
             method=client.put,
         )
         assert resp.status_code == 403
+        resp = client.patch(
+            url,
+            headers=auth("dave"),
+            json=dict(file_name="epic_new_filename.bin")
+        )
+        assert resp.status_code == 403
+        resp = client.put(
+            url,
+            headers=auth("dave"),
+            json=dict(file_name="epic_new_filename.bin", owner_name="dave")
+        )
+        assert resp.status_code == 403
 
         # test not allowing re-upload
         resp = upload(

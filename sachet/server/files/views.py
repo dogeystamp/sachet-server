@@ -18,6 +18,16 @@ class FilesMetadataAPI(ModelAPI):
     @auth_required(required_permissions=(Permissions.MODIFY,), allow_anonymous=True)
     def patch(self, share_id, auth_user=None):
         share = Share.query.filter_by(share_id=share_id).first()
+        if auth_user != share.owner:
+            return (
+                jsonify(
+                    {
+                        "status": "fail",
+                        "message": "Share must be modified by its owner.",
+                    }
+                ),
+                403,
+            )
         if share.locked:
             return jsonify({"status": "fail", "message": "This share is locked."}), 423
         return super().patch(share)
@@ -25,6 +35,16 @@ class FilesMetadataAPI(ModelAPI):
     @auth_required(required_permissions=(Permissions.MODIFY,), allow_anonymous=True)
     def put(self, share_id, auth_user=None):
         share = Share.query.filter_by(share_id=share_id).first()
+        if auth_user != share.owner:
+            return (
+                jsonify(
+                    {
+                        "status": "fail",
+                        "message": "Share must be modified by its owner.",
+                    }
+                ),
+                403,
+            )
         if share.locked:
             return jsonify({"status": "fail", "message": "This share is locked."}), 423
         return super().put(share)
