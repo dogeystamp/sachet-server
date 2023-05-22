@@ -23,6 +23,8 @@ Currently, server settings are represented by the following object:
         "default_permissions": ["PERMISSION1", "PERMISSION2"]
     }
 
+.. _admin_anon_perms:
+
 Anonymous permissions
 ^^^^^^^^^^^^^^^^^^^^^
 

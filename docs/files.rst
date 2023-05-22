@@ -64,6 +64,11 @@ In JSON, a file share has the following properties::
       - Read-only
       - UUID that uniquely identifies this share.
 
+.. note::
+
+   Share ownership can be changed by changing ``owner_name``.
+   Do note that setting it to ``null`` is equivalent to :ref:`unauthenticated users<admin_anon_perms>` owning the share.
+
 .. _files_metadata_api:
 
 Metadata API
