@@ -28,6 +28,12 @@ The server will respond like this:
         "username": "user"
     }
 
+.. warning::
+
+   Ensure that you are indeed using ``POST``.
+   Otherwise, you are querying the user with the name ``login``.
+   This will result in a "not authorized" error.
+
 Save the token in ``auth_token``.
 
 .. _authentication_usage:
@@ -69,7 +75,7 @@ You can now use the new token in ``auth_token`` for future authentication.
 This does not revoke your old token.
 See :ref:`authentication_log_out` for information on revoking tokens.
 
-.. note::
+.. warning::
    Remember to use the ``POST`` HTTP method and not ``GET``.
    If you use ``GET`` by accident, the server will assume you're trying to read the information of a user called 'extend'.
    This will result in a "not authorized" error.
@@ -87,3 +93,8 @@ Use the following request body:
         "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODUwNTk3NjIsImlhdCI6MTY4NDQ1NDk2Miwic3ViIjoidXNlciIsImp0aSI6InJlbmV3In0.ZITIK8L5FzLtm-ASwIf6TkTb69z4bsZ8FF0mWee4YI4"
     }
 
+.. warning::
+
+   Ensure that you are indeed using ``POST``.
+   Otherwise, you are querying the user with the name ``logout``.
+   This will result in a "not authorized" error.
