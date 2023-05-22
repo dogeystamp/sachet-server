@@ -105,6 +105,42 @@ class TestSuite:
         assert resp.data == new_data
         assert "filename=new_bin.bin" in resp.headers["Content-Disposition"].split("; ")
 
+    def test_transfer(self, client, users, auth):
+        # create share
+        resp = client.post(
+            "/files", headers=auth("jeff"), json={"file_name": "content.bin"}
+        )
+        data = resp.get_json()
+        url = data.get("url")
+
+        # transfer ownership over to dave
+        resp = client.patch(url, headers=auth("jeff"), json={"owner_name": "dave"})
+        assert resp.status_code == 200
+
+        # ensure the transfer worked
+        resp = client.patch(
+            url, headers=auth("jeff"), json={"file_name": "jeff's file"}
+        )
+        assert resp.status_code == 403
+        resp = client.patch(
+            url, headers=auth("dave"), json={"file_name": "dave's file"}
+        )
+        assert resp.status_code == 200
+
+        # transfer ownership back to jeff
+        resp = client.patch(url, headers=auth("dave"), json={"owner_name": "jeff"})
+        assert resp.status_code == 200
+
+        # ensure the transfer worked
+        resp = client.patch(
+            url, headers=auth("dave"), json={"file_name": "dave's epic file"}
+        )
+        assert resp.status_code == 403
+        resp = client.patch(
+            url, headers=auth("jeff"), json={"file_name": "jeff's file"}
+        )
+        assert resp.status_code == 200
+
     def test_invalid(self, client, users, auth, rand, upload):
         """Test invalid requests."""
 
@@ -183,17 +219,21 @@ class TestSuite:
         )
         assert resp.status_code == 403
         resp = client.patch(
-            url,
-            headers=auth("dave"),
-            json=dict(file_name="epic_new_filename.bin")
+            url, headers=auth("dave"), json=dict(file_name="epic_new_filename.bin")
         )
         assert resp.status_code == 403
         resp = client.put(
             url,
             headers=auth("dave"),
-            json=dict(file_name="epic_new_filename.bin", owner_name="dave")
+            json=dict(file_name="epic_new_filename.bin", owner_name="dave"),
         )
         assert resp.status_code == 403
+
+        # test assigning a file to a non-existent user
+        resp = client.patch(
+            url, headers=auth("jeff"), json=dict(owner_name="non_existent_user")
+        )
+        assert resp.status_code == 400
 
         # test not allowing re-upload
         resp = upload(

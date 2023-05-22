@@ -2,7 +2,7 @@ import uuid
 import io
 from flask import Blueprint, request, jsonify, send_file, make_response
 from flask.views import MethodView
-from sachet.server.models import Share, Permissions, Upload, Chunk
+from sachet.server.models import Share, Permissions, Upload, Chunk, User
 from sachet.server.views_common import ModelAPI, ModelListAPI, auth_required
 from sachet.server import storage, db
 
@@ -28,6 +28,18 @@ class FilesMetadataAPI(ModelAPI):
                 ),
                 403,
             )
+        owner_name = request.get_json().get("owner_name")
+        if owner_name is not None:
+            if User.query.filter_by(username=owner_name).first() is None:
+                return (
+                    jsonify(
+                        {
+                            "status": "fail",
+                            "message": f"Invalid value for `owner_name`: {owner_name}",
+                        }
+                    ),
+                    400,
+                )
         if share.locked:
             return jsonify({"status": "fail", "message": "This share is locked."}), 423
         return super().patch(share)
@@ -45,6 +57,18 @@ class FilesMetadataAPI(ModelAPI):
                 ),
                 403,
             )
+        owner_name = request.get_json().get("owner_name")
+        if owner_name is not None:
+            if User.query.filter_by(username=owner_name).first() is None:
+                return (
+                    jsonify(
+                        {
+                            "status": "fail",
+                            "message": f"Invalid value for `owner_name`: {owner_name}",
+                        }
+                    ),
+                    400,
+                )
         if share.locked:
             return jsonify({"status": "fail", "message": "This share is locked."}), 423
         return super().put(share)
