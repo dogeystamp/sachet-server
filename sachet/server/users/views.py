@@ -8,6 +8,7 @@ from sachet.server.models import (
 )
 from sachet.server.views_common import ModelAPI, ModelListAPI, auth_required
 from sachet.server import bcrypt, db
+import uuid
 
 users_blueprint = Blueprint("users_blueprint", __name__)
 
@@ -21,7 +22,7 @@ class LoginAPI(MethodView):
             return jsonify(resp), 401
 
         if bcrypt.check_password_hash(user.password, post_data.get("password", "")):
-            token = user.encode_token()
+            token = user.encode_token(jti=f"login_{uuid.uuid4()}")
             resp = {
                 "status": "success",
                 "message": "Logged in.",
@@ -88,12 +89,58 @@ users_blueprint.add_url_rule(
 )
 
 
+class PasswordAPI(MethodView):
+    """Endpoint to change passwords."""
+
+    @auth_required
+    def post(self, auth_user=None):
+        post_data = request.get_json()
+        old_psswd = post_data.get("old")
+        new_psswd = post_data.get("new")
+
+        if not old_psswd or not new_psswd:
+            return (
+                jsonify(
+                    {
+                        "status": "fail",
+                        "message": "Specify the 'old' password and the 'new' password.",
+                    }
+                ),
+                400,
+            )
+
+        if not bcrypt.check_password_hash(auth_user.password, old_psswd):
+            return (
+                jsonify(
+                    {
+                        "status": "fail",
+                        "message": "Invalid 'old' password.",
+                    }
+                ),
+                400,
+            )
+        else:
+            auth_user.password = auth_user.gen_hash(new_psswd)
+            db.session.commit()
+            return jsonify(
+                {
+                    "status": "success",
+                    "message": "Password changed.",
+                }
+            )
+
+
+users_blueprint.add_url_rule(
+    "/users/password", view_func=PasswordAPI.as_view("password_api"), methods=["POST"]
+)
+
+
 class ExtendAPI(MethodView):
     """Endpoint to take a token and get a new one with a later expiry date."""
 
     @auth_required
     def post(self, auth_user=None):
-        token = auth_user.encode_token(jti="renew")
+        token = auth_user.encode_token(jti=f"renew{uuid.uuid4()}")
         resp = {
             "status": "success",
             "message": "Renewed token.",

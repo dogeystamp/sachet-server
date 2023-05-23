@@ -87,12 +87,16 @@ class User(db.Model):
         permissions.AllFlags = Permissions
         self.permissions = permissions
 
-        self.password = bcrypt.generate_password_hash(
-            password, current_app.config.get("BCRYPT_LOG_ROUNDS")
-        ).decode()
+        self.password = self.gen_hash(password)
         self.username = username
         self.url = url_for("users_blueprint.user_api", username=self.username)
         self.register_date = datetime.datetime.now()
+
+    def gen_hash(self, psswd):
+        """Generates a hash from a password."""
+        return bcrypt.generate_password_hash(
+            psswd, current_app.config.get("BCRYPT_LOG_ROUNDS")
+        ).decode()
 
     def encode_token(self, jti=None):
         """Generates an authentication token"""

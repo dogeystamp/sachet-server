@@ -137,6 +137,47 @@ def test_logout(client, tokens, validate_info, auth):
     assert resp.status_code == 401
 
 
+def test_password_change(client, tokens, users, auth):
+    """Test changing passwords."""
+
+    # test that we're logged in
+    resp = client.get("/users/jeff", headers=auth("jeff"))
+    assert resp.status_code == 200
+
+    # change password
+    resp = client.post(
+        "/users/password",
+        json=dict(old=users["jeff"]["password"], new="new_password"),
+        headers=auth("jeff"),
+    )
+    assert resp.status_code == 200
+
+    # revoke old token
+    resp = client.post(
+        "/users/logout", json=dict(token=tokens["jeff"]), headers=auth("jeff")
+    )
+    assert resp.status_code == 200
+
+    # test that we're logged out
+    resp = client.get(
+        "/users/jeff", headers=auth("jeff"), json=dict(token=tokens["jeff"])
+    )
+    assert resp.status_code == 401
+
+    # sign in with new token
+    resp = client.post(
+        "/users/login", json=dict(username="jeff", password="new_password")
+    )
+    assert resp.status_code == 200
+    data = resp.get_json()
+    new_token = data.get("auth_token")
+    assert new_token
+
+    # test that we're logged in
+    resp = client.get("/users/jeff", headers=dict(Authorization=f"bearer {new_token}"))
+    assert resp.status_code == 200
+
+
 def test_admin_revoke(client, tokens, validate_info, auth):
     """Test that an admin can revoke any token from other users."""
 
