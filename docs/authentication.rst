@@ -98,3 +98,28 @@ Use the following request body:
    Ensure that you are indeed using ``POST``.
    Otherwise, you are querying the user with the name ``logout``.
    This will result in a "not authorized" error.
+
+.. _authentication_password_change:
+
+Password change
+---------------
+
+.. note::
+
+    Administrators can change a user's password via the ``PATCH/PUT /users/<username>`` endpoint.
+    See :ref:`user_info_api`.
+
+A user can change their own password via the password change API::
+
+    POST /users/password
+
+Use the following request body:
+
+.. code-block:: json
+
+    {
+        "old": "old_password",
+        "new": "new_password"
+    }
+
+Send the user's current password in ``old``, and Sachet will change it to the password in ``new``.
