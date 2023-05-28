@@ -1,5 +1,6 @@
 venv
 .venv
+.docvenv
 __pycache__/
 .env
 config.yml

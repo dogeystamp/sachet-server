@@ -90,3 +90,22 @@ To clean up the database (remove stale entries)::
 Otherwise, to upgrade the database after a schema change::
 
     flask --app sachet.server db upgrade
+
+Documentation
+-------------
+
+This documentation is built using Sphinx with the following steps.
+
+First, create a new virtual environment for documentation-related dependencies::
+
+    python -m venv .docvenv
+    source .docvenv/bin/activate
+    python -m pip install -r docs/requirements.txt
+
+Then, build docs::
+
+    make -C docs html
+
+You can now view the documentation with a web browser::
+
+    xdg-open docs/_build/html/index.html
