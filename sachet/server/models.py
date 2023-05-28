@@ -89,8 +89,12 @@ class User(db.Model):
 
         self.password = self.gen_hash(password)
         self.username = username
-        self.url = url_for("users_blueprint.user_api", username=self.username)
         self.register_date = datetime.datetime.now()
+
+    @property
+    def url(self):
+        """URL linking to this resource."""
+        return url_for("users_blueprint.user_api", username=self.username)
 
     def gen_hash(self, psswd):
         """Generates a hash from a password."""
