@@ -1,64 +1,15 @@
 # sachet
 
-sachet is a small file share server.
+Sachet is a small file share server.
 
-## development
+## Installation & Usage
 
-To start sachet in development mode:
+See [the docs](https://sachet-server.readthedocs.io/en/latest/) for information about how to set up Sachet, and how to use its API.
 
-Clone the repo.
+## Features
 
-```
-git clone https://github.com/dogeystamp/sachet
-cd sachet
-```
-
-Create a venv with required dependencies:
-
-```
-python -m venv venv
-source venv/bin/activate
-python -m pip3 install -r requirements.txt
-```
-
-Create a configuration file (and set the secret key!)
-```
-cp config.yml.example config.yml
-vim config.yml
-```
-
-Start Flask in development mode:
-
-```
-flask --debug --app sachet.server run
-```
-
-### tests
-
-Tests are available with the following command:
-
-```
-pytest --cov --cov-report term-missing
-```
-
-### linting
-
-Please use the linter before submitting code.
-
-```
-black .
-```
-
-## database maintenance
-
-To clean up the database (remove stale entries):
-
-```
-flask --app sachet.server cleanup
-```
-
-Otherwise, to upgrade the database after a schema change:
-
-```
-flask --app sachet.server db upgrade
-```
+- JWT-based [authentication](https://sachet-server.readthedocs.io/en/latest/authentication.html)
+- Granular user [permissions](https://sachet-server.readthedocs.io/en/latest/permissions.html) (read, create, modify, delete, admin)
+- [Anonymous access](https://sachet-server.readthedocs.io/en/latest/admin.html#anonymous-permissions) to shares can be configured
+- REST API for interacting with clients
+- Chunked uploads/downloads for reliability
