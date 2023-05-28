@@ -20,6 +20,9 @@ Welcome to Sachet's documentation!
    cli
 
 Sachet is a small file-sharing server.
+Its source code can be found on `GitHub <https://github.com/dogeystamp/sachet-server>`_.
+
+To get started with Sachet, see :ref:`getting_started`.
 
 Indices and tables
 ==================
