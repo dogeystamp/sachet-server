@@ -17,6 +17,7 @@ Welcome to Sachet's documentation!
    user
    admin
    files
+   cli
 
 Sachet is a small file-sharing server.
 
