@@ -1,0 +1,252 @@
+[ ]: not started
+[-]: in progress
+[x]: done
+[!]: wontfix
+[?]: maybe
+
+[x] authentication
+	[x] /users/login POST
+	[x] /users/logout POST
+	[x] /users/extend POST
+
+[x] permissions
+	[x] change the db schema
+		[x] use a library for serializing classes
+		[x] permissions are:
+			- create file
+			- modify any file
+			- delete any file
+			- lock/unlock any file
+				no modification, no deletion
+			- list all files
+			- admin
+				doesn't imply other privileges directly,
+				but means you can set them to yourself
+	[x] /users/<user> GET
+		this endpoint will now contain permission data too
+	[x] /users/<user> PATCH
+	[x] /users/<user> PUT
+		we'll use these to set permissions
+
+	[x] make the "generic model api"
+		endpoints like /users/<id> and /admin/settings
+		that directly get/set models will inherit from this class
+		any authentication/permission logic belongs to the children class
+
+		[x] make schemas members of their parent models
+
+	[x] settings endpoint
+		[x] initialize settings to defaults
+
+		[x] tests
+		[x] /admin/settings GET
+		[x] /admin/settings PATCH
+		[x] /admin/settings PUT
+			settings will set the default non-authenticated user's permissions
+
+[x] linter
+
+[x] file management backend
+	we want to abstract away the filesystem
+	[x] write todos for this entry
+		read, write, list
+		but how are we going to implement metadata and stuff?
+		are we going to use UUIDs?
+		hashing?
+
+	[x] create the module sachet.storage
+		[x] class Storage
+			generic storage
+			- get handle to file
+			- list files
+		[x] class File
+			- delete file
+			- r/w file
+			- read metadata
+			- write metadata
+			- rename file
+
+		our "real" classes will inherit from the Storage interface
+		and they will replace all the methods (and the File class)
+
+		[x] class FileSystem
+			just hook up python's os filesystem to FileSystem
+
+			[x] rewrite tests
+			[x] class File
+				- create file and its associated metadata file
+				- delete file
+				- r/w file
+				- read metadata
+				- write metadata
+				- rename file
+
+[x] file sharing
+	[x] Share model
+		[x] docstring
+
+	[x] auth_required: require certain permissions
+
+	metadata
+		[x] /files POST
+			client will post metadata as json
+			returns a 201 and set Location header to the created entry
+			depends on create file permission
+		[x] /files/<file> PUT
+			metadata update
+		[x] /files/<file> PATCH
+			metadata update
+		[x] /files/<file> GET
+			metadata get
+		[x] /files/<file> DELETE
+			deletes file
+
+	files
+		[x] /files/<file>/content POST
+			uploads file
+		[x] /files/<file>/content PUT
+			modifies file
+		[x] /files/<file>/content GET
+			downloads file, depends on read permission
+
+	[x] debugging
+
+	[x] testing
+
+	[x] metadata
+		[x] implement a filename for Share
+		[x] test filename
+
+	[x] test modification
+
+	[x] implement listing files
+		[x] split POST off ModelClass
+			one class will be for editing models themselves
+			other class, ModelListClass
+				POST creates a new Model
+				GET lists all models (paginated)
+		[x] implement ModelListClass GET (pagination!)
+
+	[x] implement anonymous permissions
+		[x] test adversarial conditions
+
+	[x] fix that one bug where sending a non-int page number causes 500
+		[x] write a test case to prevent it
+
+	[x] fix modification
+		supposedly users should only be able to modify their own pastes
+
+	locking
+		[x] add locked attribute to Share
+		[x] implement authorization to modify/delete
+		[x] implement changing lock/unlock state
+			setting a bool flag in /files/<file> PUT/PATCH/POST
+			has the be authorized, though
+
+[!] access docstrings without starting up the webserver
+	https://stackoverflow.com/questions/18214612/how-to-access-app-config-in-a-blueprint
+	instead of importing app, import this
+
+[x] database migrations
+[x] database cleanup
+	move all the cleanup to a flask cmd
+	"delete where date < expiry"
+
+[x] write in README about db cleanup and migrations
+
+[x] implement chunked upload
+	[x] Upload model
+		does not have a REST API endpoint
+		[x] upload_id (primary key a.k.a. dzuuid)
+		[x] backref to Share
+		[x] list of Chunks
+		[x] datetime
+	[x] Chunk model
+		does not have a REST API endpoint
+		[x] id (autoincrement)
+		[x] index
+		[x] backref to Upload
+		[x] datetime
+
+	we will store chunks as individual files: share uuid + suffix
+	suffix is
+	- upload uuid (prevents race condition for two concurrent uploads)
+	- chunk index
+	
+	[x] write tests for chunked upload
+	[?] write more rigorous tests
+		poke at the chunks themselves
+		what happens when you send chunks in a race condition,
+		at the wrong time, with the wrong permissions, etc?
+
+	[x] investigate why share_id is set to none
+	[x] clear out chunk files after they're used
+	[x] clear out files after they are deleted
+
+[x] implement chunked download
+	[x] implement File.size
+		[x] write tests
+	[x] write test for Range
+	[x] implement HTTP 416
+		[x] write appropriate tests
+
+[x] write periodic cleanup for crusty stale uploads and chunks
+	so right now the issue is that the chunk on_delete event isn't triggering
+	and we're leaving random files on the disk
+
+[x] add /users API
+	[x] fix url for users (returned when posting)
+		[x] create test case
+	[x] add /users DELETE
+		[x] added test case
+		[x] add a note for this in the docs
+	[x] password change endpoint
+		[x] tests
+		[x] docs
+
+[x] investigate "FOREIGN KEY constraint failed"
+
+[x] investigate what happens when you change ownership of a share to a
+	non-existent user
+	add a note maybe to the docs
+	[x] add note about ownership transfers
+	[x] add note that setting owner to null allows anon users to own it
+
+[x] make sure that reserved names like `login`, `renew` are actually necessary
+	right now we're only implementing them on the CLI interface
+	maybe it doesn't matter because we're using POST only for these
+	and users don't have POST
+	[x] if they're not necessary we'll tear out the safeguards
+	[x] also add a warning to related endpoints to be careful
+
+[x] fix bug where users can modify other users' shares' metadata
+
+[x] proper documentation
+	[x] use a linter on docstrings
+	[x] Authentication
+	[x] Paginated APIs
+	[x] Permissions
+	[x] User API
+		[x] url_for docs
+	[x] Admin API
+		[x] anon perms
+	[x] Files API
+		[x] metadata API
+		[x] list API
+			[x] url_for docs
+		[x] content API
+			[x] chunked upload protocol
+			[x] POST
+			[x] PUT
+			[x] GET
+		[x] lock API
+			(reference this in permissions)
+			(reference this in the files schema)
+	[x] cli
+	[x] getting started (dev)
+
+[ ] investigate cleanup being in the user subcmd
+[ ] investigate cleanup cmd triggering foreign key failure
+
+[ ] prod deployment config WSGI
+	[ ] write info about this in docs
