@@ -28,6 +28,7 @@ File Schema
 In JSON, a file share has the following properties::
 
     {
+        "create_date": "2023-05-20T23:05:31.546561",
         "file_name": "file.txt",
         "initialized": true,
         "locked": false,
@@ -43,6 +44,10 @@ In JSON, a file share has the following properties::
       - Type
       - Limits
       - Description
+    * - ``create_date``
+      - Date
+      - Time at which this share was created.
+      - Read-only
     * - ``file_name``
       - String
       -

@@ -283,6 +283,7 @@ class Share(db.Model):
                 model = self
 
             share_id = ma.auto_field(dump_only=True)
+            create_date = ma.auto_field(dump_only=True)
             owner_name = ma.auto_field()
             file_name = ma.auto_field()
             initialized = ma.auto_field(dump_only=True)
