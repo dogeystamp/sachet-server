@@ -54,6 +54,8 @@ def test_files(client, users, auth):
             data = resp.get_json().get("data")
             assert len(data) == per_page or len(data) == share_count % per_page
 
+            assert resp.get_json().get("pages") == ceil(share_count / per_page)
+
             for share in data:
                 share_id = share.get("share_id")
                 assert share_id in shares
@@ -136,6 +138,8 @@ def test_users(client, users, auth):
 
             data = resp.get_json().get("data")
             assert len(data) == per_page or len(data) == user_count % per_page
+
+            assert resp.get_json().get("pages") == ceil(user_count / per_page)
 
             for user in data:
                 username = user.get("username")

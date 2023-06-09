@@ -35,6 +35,7 @@ For our example, the server might respond like this (fields removed for brevity)
            }
        ],
        "next": 2,
+       "pages": 3,
        "prev": null
     }
 
@@ -46,3 +47,6 @@ which help us navigate to other pages.
 Since we're on the first page, there is no previous page, which is why ``prev`` is empty.
 
 If we wished to go to the next page, we'd make the same request with the new page number.
+
+The ``pages`` field is the total number of pages there is in this query.
+That is, page 3 is the last page in this example.

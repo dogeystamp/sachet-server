@@ -264,6 +264,8 @@ class ModelListAPI(MethodView):
             Number of previous page (if this is not the first).
         next : int or None
             Number of next page (if this is not the last).
+        pages : int
+            Total number of pages.
         """
         try:
             per_page = int(request.args.get("per_page", 15))
@@ -287,5 +289,6 @@ class ModelListAPI(MethodView):
                 data=data,
                 prev=page_data.prev_num,
                 next=page_data.next_num,
+                pages=page_data.pages,
             )
         )
