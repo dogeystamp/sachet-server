@@ -249,7 +249,7 @@ class ModelListAPI(MethodView):
         ModelClass
             Model class to query.
 
-        JSON Parameters
+        URL Parameters
         ---------------
         per_page : int
             Amount of entries to return in one query.
@@ -265,10 +265,9 @@ class ModelListAPI(MethodView):
         next : int or None
             Number of next page (if this is not the last).
         """
-        json_data = request.get_json()
         try:
-            per_page = int(json_data.get("per_page", 15))
-            page = int(json_data.get("page", 1))
+            per_page = int(request.args.get("per_page", 15))
+            page = int(request.args.get("page", 1))
         except ValueError as e:
             return (
                 jsonify(

@@ -45,7 +45,9 @@ def test_files(client, users, auth):
         per_page = 9
         while page is not None:
             resp = client.get(
-                "/files", headers=auth("jeff"), json=dict(page=page, per_page=per_page)
+                "/files",
+                headers=auth("jeff"),
+                query_string=dict(page=page, per_page=per_page),
             )
             assert resp.status_code == 200
 
@@ -128,7 +130,7 @@ def test_users(client, users, auth):
             resp = client.get(
                 "/users",
                 headers=auth("administrator"),
-                json=dict(page=page, per_page=per_page),
+                query_string=dict(page=page, per_page=per_page),
             )
             assert resp.status_code == 200
 
@@ -164,6 +166,6 @@ def test_invalid(client, auth):
     """Test invalid requests to pagination."""
 
     resp = client.get(
-        "/files", headers=auth("jeff"), json=dict(page="one", per_page="two")
+        "/files", headers=auth("jeff"), query_string=dict(page="one", per_page="two")
     )
     assert resp.status_code == 400

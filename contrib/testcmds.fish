@@ -48,7 +48,7 @@ function sachet_list -d "lists files on a given page"
 	if not set -q _flag_per_page
 		set _flag_per_page 5
 	end
-	http --session=$_flag_session get localhost:5000/files per_page=$_flag_per_page page=$argv[1]
+	http --session=$_flag_session get localhost:5000/files per_page==$_flag_per_page page==$argv[1]
 end
 
 function sachet_download -d "downloads a given file id"

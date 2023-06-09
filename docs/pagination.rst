@@ -7,16 +7,10 @@ Some APIs in Sachet might return lots of data.
 Because this is often a lot to handle, Sachet will use pagination on some endpoints.
 
 For example, let's say we want to list all shares on the server.
-To do this, we'll run ``GET /files`` using the following request body:
 
-.. code-block:: json
+To do this, we'll run ``GET /files?page=1&per_page=3``.
 
-    {
-        "page": "1",
-        "per_page": "3"
-    }
-
-As seen in the above example, paginated APIs on Sachet require the following parameters:
+Paginated APIs on Sachet require the following parameters:
 
 * ``page`` : the number of the page we want to query;
 * ``per_page`` : the number of items per page we receive.
