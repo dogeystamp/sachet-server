@@ -9,17 +9,17 @@ admin_blueprint = Blueprint("admin_blueprint", __name__)
 
 
 class ServerSettingsAPI(ModelAPI):
-    @auth_required(required_permissions=(Permissions.ADMIN,))
+    @auth_required(required_permissions=(Permissions.ADMIN,), allow_anonymous=True)
     def get(self, auth_user=None):
         settings = get_settings()
         return super().get(settings)
 
-    @auth_required(required_permissions=(Permissions.ADMIN,))
+    @auth_required(required_permissions=(Permissions.ADMIN,), allow_anonymous=True)
     def patch(self, auth_user=None):
         settings = get_settings()
         return super().patch(settings)
 
-    @auth_required(required_permissions=(Permissions.ADMIN,))
+    @auth_required(required_permissions=(Permissions.ADMIN,), allow_anonymous=True)
     def put(self, auth_user=None):
         settings = get_settings()
         return super().put(settings)

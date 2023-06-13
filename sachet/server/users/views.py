@@ -197,12 +197,12 @@ users_blueprint.add_url_rule(
 
 
 class UserListAPI(ModelListAPI):
-    @auth_required(required_permissions=(Permissions.ADMIN,))
+    @auth_required(required_permissions=(Permissions.ADMIN,), allow_anonymous=True)
     def post(self, auth_user=None):
         data = request.get_json()
         return super().post(User, data)
 
-    @auth_required(required_permissions=(Permissions.ADMIN,))
+    @auth_required(required_permissions=(Permissions.ADMIN,), allow_anonymous=True)
     def get(self, auth_user=None):
         return super().get(User)
 
