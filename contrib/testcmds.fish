@@ -32,7 +32,7 @@ function sachet_upload -d "uploads a file"
 	set URL (http --session=$_flag_session post $BASENAME/files file_name=$FNAME | tee /dev/tty | jq -r .url)
 	http --session=$_flag_session -f post $BASENAME/$URL/content \
 		upload@$argv \
-		dzuuid=(cat /dev/urandom | xxd -ps | head -c 32) \
+		dzuuid=(cat /dev/urandom | base64 | head -c 32) \
 		dzchunkindex=0 \
 		dztotalchunks=1
 end
