@@ -4,6 +4,8 @@ Permissions
 Sachet offers a selection of permissions that can be assigned to users,
 which manage their access to certain endpoints.
 
+.. _permissions_serialization:
+
 Serialization
 -------------
 In Sachet's JSON API, permissions are serialized as an array of string codes.
@@ -59,3 +61,19 @@ The following is a table of permissions Sachet offers, and what they do:
     * - Administration
       - ``ADMIN``
       - Allows creating users and managing their permissions.
+
+Whoami API
+----------
+
+Information about the current user and their permissions can be obtained through this API.
+``GET /whoami`` will return a result like this:
+
+.. code-block:: json
+
+    {
+        "username": "user",
+        "permissions": ["READ", "CREATE"]
+    }
+
+``permissions`` will be serialized as in :ref:`permissions_serialization`.
+If the user is not currently signed in, ``username`` will be ``null``.

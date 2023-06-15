@@ -245,6 +245,10 @@
 	[x] cli
 	[x] getting started (dev)
 
+[x] implement /whoami endpoint
+	[x] tests
+	[x] docs
+
 [ ] investigate cleanup being in the user subcmd
 [ ] investigate cleanup cmd triggering foreign key failure
 

@@ -65,3 +65,7 @@ app.register_blueprint(admin_blueprint)
 from sachet.server.files.views import files_blueprint
 
 app.register_blueprint(files_blueprint)
+
+from sachet.server.whoami.views import whoami_blueprint
+
+app.register_blueprint(whoami_blueprint)
