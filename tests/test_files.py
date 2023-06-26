@@ -165,6 +165,20 @@ class TestSuite:
             "/files/" + str(uuid.UUID(int=0)) + "/content", headers=auth("jeff")
         )
         assert resp.status_code == 404
+        resp = client.delete("/files/" + str(uuid.UUID(int=0)), headers=auth("jeff"))
+        assert resp.status_code == 404
+        resp = client.patch(
+            "/files/" + str(uuid.UUID(int=0)),
+            headers=auth("jeff"),
+            json=dict(filename="incredible-new-filename"),
+        )
+        assert resp.status_code == 404
+        resp = client.put(
+            "/files/" + str(uuid.UUID(int=0)),
+            headers=auth("jeff"),
+            json=dict(filename="incredible-new-filename", owner_name="jeff"),
+        )
+        assert resp.status_code == 404
 
         # no CREATE permission
         resp = client.post("/files", headers=auth("no_create_user"))

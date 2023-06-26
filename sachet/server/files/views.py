@@ -18,6 +18,13 @@ class FilesMetadataAPI(ModelAPI):
     @auth_required(required_permissions=(Permissions.MODIFY,), allow_anonymous=True)
     def patch(self, share_id, auth_user=None):
         share = Share.query.filter_by(share_id=share_id).first()
+        if not share:
+            resp = {
+                "status": "fail",
+                "message": "This resource does not exist.",
+            }
+            return jsonify(resp), 404
+
         if auth_user != share.owner:
             return (
                 jsonify(
@@ -47,6 +54,12 @@ class FilesMetadataAPI(ModelAPI):
     @auth_required(required_permissions=(Permissions.MODIFY,), allow_anonymous=True)
     def put(self, share_id, auth_user=None):
         share = Share.query.filter_by(share_id=share_id).first()
+        if not share:
+            resp = {
+                "status": "fail",
+                "message": "This resource does not exist.",
+            }
+            return jsonify(resp), 404
         if auth_user != share.owner:
             return (
                 jsonify(
@@ -75,11 +88,13 @@ class FilesMetadataAPI(ModelAPI):
 
     @auth_required(required_permissions=(Permissions.DELETE,), allow_anonymous=True)
     def delete(self, share_id, auth_user=None):
-        try:
-            uuid.UUID(share_id)
-        except ValueError:
-            return jsonify(dict(status="fail", message=f"Invalid ID: '{share_id}'."))
         share = Share.query.filter_by(share_id=share_id).first()
+        if not share:
+            resp = {
+                "status": "fail",
+                "message": "This resource does not exist.",
+            }
+            return jsonify(resp), 404
         if share.locked:
             return jsonify({"status": "fail", "message": "This share is locked."}), 423
         return super().delete(share)
