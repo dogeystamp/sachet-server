@@ -117,7 +117,7 @@ class PasswordAPI(MethodView):
                         "message": "Invalid 'old' password.",
                     }
                 ),
-                400,
+                403,
             )
         else:
             auth_user.password = auth_user.gen_hash(new_psswd)

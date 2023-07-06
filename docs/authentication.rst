@@ -123,3 +123,4 @@ Use the following request body:
     }
 
 Send the user's current password in ``old``, and Sachet will change it to the password in ``new``.
+If the password is wrong, Sachet will return a ``403``.
