@@ -70,6 +70,27 @@ def test_patch(client, users, auth, validate_info):
     assert resp.status_code == 200
     validate_info("jeff", resp.get_json())
 
+    # test password change through patch
+    resp = client.patch(
+            "/users/jeff",
+            json=dict(password="123"),
+            headers=auth("administrator"),
+            )
+    assert resp.status_code == 200
+
+    # sign in with new token
+    resp = client.post(
+        "/users/login", json=dict(username="jeff", password="123")
+    )
+    assert resp.status_code == 200
+    data = resp.get_json()
+    new_token = data.get("auth_token")
+    assert new_token
+
+    # test that we're logged in
+    resp = client.get("/users/jeff", headers=dict(Authorization=f"bearer {new_token}"))
+    assert resp.status_code == 200
+
 
 def test_put(client, users, auth, validate_info):
     """Test replacing user information as an administrator."""
@@ -102,3 +123,16 @@ def test_put(client, users, auth, validate_info):
     resp = client.get("/users/jeff", headers=auth("jeff"))
     assert resp.status_code == 200
     validate_info("jeff", resp.get_json())
+
+    # sign in with new token
+    resp = client.post(
+        "/users/login", json=dict(username="jeff", password="123")
+    )
+    assert resp.status_code == 200
+    data = resp.get_json()
+    new_token = data.get("auth_token")
+    assert new_token
+
+    # test that we're logged in
+    resp = client.get("/users/jeff", headers=dict(Authorization=f"bearer {new_token}"))
+    assert resp.status_code == 200
