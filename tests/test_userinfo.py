@@ -72,16 +72,14 @@ def test_patch(client, users, auth, validate_info):
 
     # test password change through patch
     resp = client.patch(
-            "/users/jeff",
-            json=dict(password="123"),
-            headers=auth("administrator"),
-            )
+        "/users/jeff",
+        json=dict(password="123"),
+        headers=auth("administrator"),
+    )
     assert resp.status_code == 200
 
     # sign in with new token
-    resp = client.post(
-        "/users/login", json=dict(username="jeff", password="123")
-    )
+    resp = client.post("/users/login", json=dict(username="jeff", password="123"))
     assert resp.status_code == 200
     data = resp.get_json()
     new_token = data.get("auth_token")
@@ -125,9 +123,7 @@ def test_put(client, users, auth, validate_info):
     validate_info("jeff", resp.get_json())
 
     # sign in with new token
-    resp = client.post(
-        "/users/login", json=dict(username="jeff", password="123")
-    )
+    resp = client.post("/users/login", json=dict(username="jeff", password="123"))
     assert resp.status_code == 200
     data = resp.get_json()
     new_token = data.get("auth_token")

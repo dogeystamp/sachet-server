@@ -120,7 +120,7 @@ class PasswordAPI(MethodView):
                 403,
             )
         else:
-            auth_user.password = auth_user.gen_hash(new_psswd)
+            auth_user.password = new_psswd
             db.session.commit()
             return jsonify(
                 {

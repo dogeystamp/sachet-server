@@ -73,11 +73,44 @@ class PermissionProperty:
         db.session.commit()
 
 
+class PasswordProperty:
+    """Property to hash plaintext to a password.
+
+    The hash field will have the same name as this property, suffixed with "_hash".
+    For example::
+
+        class User(db.Model):
+            password = db.Column(db.String(255), nullable=False)
+            password = PasswordProperty()
+
+    Reading will return the hash, while writing hashes plaintext.
+    """
+
+    def __set_name__(self, owner, name):
+        self.name = name
+
+    def __get__(self, obj, objtype=None):
+        return getattr(obj, self.name + "_hash")
+
+    def __set__(self, obj, value):
+        hash = User.gen_hash(value)
+        setattr(obj, self.name + "_hash", hash.decode())
+
+
 class User(db.Model):
     __tablename__ = "users"
 
     username = db.Column(db.String(255), unique=True, nullable=False, primary_key=True)
-    password = db.Column(db.String(255), nullable=False)
+
+    password_hash = db.Column(db.String(255), nullable=False)
+    password = PasswordProperty()
+
+    @staticmethod
+    def gen_hash(value):
+        return bcrypt.generate_password_hash(
+            value, current_app.config.get("BCRYPT_LOG_ROUNDS")
+        )
+
     register_date = db.Column(db.DateTime, nullable=False)
 
     permissions_number = db.Column(db.BigInteger, nullable=False, default=0)
@@ -87,7 +120,7 @@ class User(db.Model):
         permissions.AllFlags = Permissions
         self.permissions = permissions
 
-        self.password = self.gen_hash(password)
+        self.password = password
         self.username = username
         self.register_date = datetime.datetime.now()
 
@@ -95,12 +128,6 @@ class User(db.Model):
     def url(self):
         """URL linking to this resource."""
         return url_for("users_blueprint.user_api", username=self.username)
-
-    def gen_hash(self, psswd):
-        """Generates a hash from a password."""
-        return bcrypt.generate_password_hash(
-            psswd, current_app.config.get("BCRYPT_LOG_ROUNDS")
-        ).decode()
 
     def encode_token(self, jti=None):
         """Generates an authentication token"""
@@ -114,6 +141,7 @@ class User(db.Model):
             payload, current_app.config.get("SECRET_KEY"), algorithm="HS256"
         )
 
+    @staticmethod
     def read_token(token):
         """Read a JWT and validate it.
 
@@ -143,7 +171,7 @@ class User(db.Model):
 
             username = ma.auto_field()
             register_date = ma.auto_field(dump_only=True)
-            password = ma.auto_field(load_only=True, required=False)
+            password = fields.Str(load_only=True, required=False)
             permissions = PermissionField()
 
         return Schema()

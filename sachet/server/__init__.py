@@ -6,7 +6,7 @@ from flask_marshmallow import Marshmallow
 from flask_bcrypt import Bcrypt
 from flask_migrate import Migrate
 from .config import DevelopmentConfig, ProductionConfig, TestingConfig, overlay_config
-from sqlalchemy import event
+from sqlalchemy import event, MetaData
 from sqlalchemy.engine import Engine
 from sqlite3 import Connection as SQLite3Connection
 
@@ -25,8 +25,18 @@ with app.app_context():
         overlay_config(ProductionConfig)
 
 bcrypt = Bcrypt(app)
-db = SQLAlchemy(app)
-migrate = Migrate(app, db)
+
+# https://stackoverflow.com/questions/62640576/
+convention = {
+    "ix": "ix_%(column_0_label)s",
+    "uq": "uq_%(table_name)s_%(column_0_name)s",
+    "ck": "ck_%(table_name)s_%(constraint_name)s",
+    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+    "pk": "pk_%(table_name)s",
+}
+metadata = MetaData(naming_convention=convention)
+db = SQLAlchemy(app, metadata=metadata)
+migrate = Migrate(app, db, render_as_batch=True)
 ma = Marshmallow()
 
 _storage_method = app.config["SACHET_STORAGE"]
