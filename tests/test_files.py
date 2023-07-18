@@ -180,6 +180,30 @@ class TestSuite:
         )
         assert resp.status_code == 404
 
+        # malformed
+        resp = client.get("/files/" + "123123123123", headers=auth("jeff"))
+        assert resp.status_code == 404
+        resp = client.get("/files/" + "123123123" + "/content", headers=auth("jeff"))
+        assert resp.status_code == 404
+        resp = client.post("/files/" + "123123123" + "/content", headers=auth("jeff"))
+        assert resp.status_code == 404
+        resp = client.put("/files/" + "123123123" + "/content", headers=auth("jeff"))
+        assert resp.status_code == 404
+        resp = client.delete("/files/" + "123123123", headers=auth("jeff"))
+        assert resp.status_code == 404
+        resp = client.patch(
+            "/files/" + "123123123",
+            headers=auth("jeff"),
+            json=dict(filename="incredible-new-filename"),
+        )
+        assert resp.status_code == 404
+        resp = client.put(
+            "/files/" + "123123123",
+            headers=auth("jeff"),
+            json=dict(filename="incredible-new-filename", owner_name="jeff"),
+        )
+        assert resp.status_code == 404
+
         # no CREATE permission
         resp = client.post("/files", headers=auth("no_create_user"))
         assert resp.status_code == 403

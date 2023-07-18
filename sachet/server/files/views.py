@@ -9,15 +9,23 @@ from sachet.server import storage, db
 files_blueprint = Blueprint("files_blueprint", __name__)
 
 
+def filter_id(id: str):
+    try:
+        uuid.UUID(id)
+        return id
+    except ValueError:
+        return uuid.UUID(int=0)
+
+
 class FilesMetadataAPI(ModelAPI):
     @auth_required(required_permissions=(Permissions.READ,), allow_anonymous=True)
     def get(self, share_id, auth_user=None):
-        share = Share.query.filter_by(share_id=share_id).first()
+        share = Share.query.filter_by(share_id=filter_id(share_id)).first()
         return super().get(share)
 
     @auth_required(required_permissions=(Permissions.MODIFY,), allow_anonymous=True)
     def patch(self, share_id, auth_user=None):
-        share = Share.query.filter_by(share_id=share_id).first()
+        share = Share.query.filter_by(share_id=filter_id(share_id)).first()
         if not share:
             resp = {
                 "status": "fail",
@@ -53,7 +61,7 @@ class FilesMetadataAPI(ModelAPI):
 
     @auth_required(required_permissions=(Permissions.MODIFY,), allow_anonymous=True)
     def put(self, share_id, auth_user=None):
-        share = Share.query.filter_by(share_id=share_id).first()
+        share = Share.query.filter_by(share_id=filter_id(share_id)).first()
         if not share:
             resp = {
                 "status": "fail",
@@ -88,7 +96,7 @@ class FilesMetadataAPI(ModelAPI):
 
     @auth_required(required_permissions=(Permissions.DELETE,), allow_anonymous=True)
     def delete(self, share_id, auth_user=None):
-        share = Share.query.filter_by(share_id=share_id).first()
+        share = Share.query.filter_by(share_id=filter_id(share_id)).first()
         if not share:
             resp = {
                 "status": "fail",
@@ -178,7 +186,7 @@ class FileContentAPI(MethodView):
 
     @auth_required(required_permissions=(Permissions.CREATE,), allow_anonymous=True)
     def post(self, share_id, auth_user=None):
-        share = Share.query.filter_by(share_id=uuid.UUID(share_id)).first()
+        share = Share.query.filter_by(share_id=filter_id(share_id)).first()
 
         if not share:
             return (
@@ -211,7 +219,7 @@ class FileContentAPI(MethodView):
 
     @auth_required(required_permissions=(Permissions.MODIFY,), allow_anonymous=True)
     def put(self, share_id, auth_user=None):
-        share = Share.query.filter_by(share_id=share_id).first()
+        share = Share.query.filter_by(share_id=filter_id(share_id)).first()
         if not share:
             return (
                 jsonify({"status": "fail", "message": "This share does not exist."})
@@ -248,7 +256,7 @@ class FileContentAPI(MethodView):
 
     @auth_required(required_permissions=(Permissions.READ,), allow_anonymous=True)
     def get(self, share_id, auth_user=None):
-        share = Share.query.filter_by(share_id=share_id).first()
+        share = Share.query.filter_by(share_id=filter_id(share_id)).first()
         if not share:
             return (
                 jsonify({"status": "fail", "message": "This share does not exist."})

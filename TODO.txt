@@ -249,11 +249,14 @@
 	[x] tests
 	[x] docs
 
+[ ] expose filesize in share info
+
 [ ] investigate cleanup being in the user subcmd
 [ ] investigate cleanup cmd triggering foreign key failure
 
 [ ] if you create a new user without a required field it gives 500
 [ ] if you create a new user with the same name as an existing one it gives 500
+[x] if you try to read a share with an invalid uuid it gives 500
 
 [ ] investigate if you can interfere with an upload by setting the same id
 
